@@ -7,7 +7,7 @@ Sources of http://krm-demo.org.
 > | You do | What happens | Where |
 > |---|---|---|
 > | push to `main` | **preview** is rebuilt (~1 min) | https://krm-demo.github.io/krm-demo-org-site/ |
-> | push a tag `v*` (e.g. `v1.2.0`) | **production** is updated (~1 min) | http://krm-demo.org |
+> | push a tag `v*` (e.g. `v1.2.0`) | **AWS S3** (krm-demo.org) is updated (~1 min) | http://krm-demo.org |
 >
 > Nothing reaches krm-demo.org without a `v*` tag.
 
@@ -15,7 +15,7 @@ Sources of http://krm-demo.org.
 
 - `site/` — the pages that get published. Only files under `site/` are deployed.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
-- `.github/workflows/deploy.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`.
+- `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`.
 
 ## Everyday workflow
 
@@ -36,7 +36,7 @@ Progress and logs of both: the repo's **Actions** tab.
 
 ### Rolling back
 
-Re-release an older tag: **Actions → Release to krm-demo.org (S3) → Run workflow**, pick the old tag in
+Re-release an older tag: **Actions → Release to AWS S3 (krm-demo.org) → Run workflow**, pick the old tag in
 "Use workflow from". Or tag the old commit with a new version (`git tag v1.1.1 <old-sha> && git push origin v1.1.1`).
 
 ### Tag notes

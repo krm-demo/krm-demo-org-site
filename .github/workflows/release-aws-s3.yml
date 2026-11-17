@@ -1,6 +1,6 @@
-name: Release to krm-demo.org (S3)
+name: Release to AWS S3 (krm-demo.org)
 
-# Production deploy. Runs ONLY for version tags (v1.0.0, v1.2, ...), never for plain pushes to main.
+# Release to AWS S3. Runs ONLY for version tags (v1.0.0, v1.2, ...), never for plain pushes to main.
 # Pushes to main go to the GitHub Pages preview instead (see pages.yml).
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-krm-demo-org
+  group: release-aws-s3
   cancel-in-progress: false
 
 env:
