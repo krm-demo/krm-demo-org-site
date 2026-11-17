@@ -22,7 +22,7 @@ Sources of http://krm-demo.org.
 
 Every build writes `build.json` (build number, tag/branch, commit, workflow run, time, target).
 `site/build-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
-`Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`, with links to the run and the commit.
+`Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`. Links: build number and "deployed … ago" → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact date.
 While the page stays open it re-checks `build.json` every minute and shows "new version deployed — reload".
 Served locally without a build, it shows "Local preview (no build info)".
 

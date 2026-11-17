@@ -30,18 +30,22 @@
 
   function render(b) {
     var gh = b.repo ? 'https://github.com/' + b.repo : null;
+    var runUrl = gh && b.run_id ? gh + '/actions/runs/' + b.run_id : null;
     var parts = [];
+    // "Build #7"     -> the workflow run that built it
     parts.push(b.run_number
-      ? link('Build #' + b.run_number + (b.run_attempt > 1 ? '.' + b.run_attempt : ''),
-             gh && b.run_id ? gh + '/actions/runs/' + b.run_id : null)
+      ? link('Build #' + b.run_number + (b.run_attempt > 1 ? '.' + b.run_attempt : ''), runUrl)
       : link('Local build', null));
-    if (b.ref) parts.push(link(b.ref, gh ? gh + '/tree/' + encodeURIComponent(b.ref) : null));
+    // "v0.2.0"/"main" -> the repository at that tag or branch
+    if (b.ref) parts.push(link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null));
+    // "a10737a"      -> the commit
     if (b.sha) parts.push(link(b.sha.slice(0, 7), gh ? gh + '/commit/' + b.sha : null));
     if (b.target) parts.push(link(b.target, null));
 
+    // "deployed 3 minutes ago" -> the workflow run as well; exact time on hover
     builtAt = new Date(b.built_at);
-    ageEl = document.createElement('span');
-    ageEl.title = builtAt.toLocaleString();
+    ageEl = link('', runUrl);
+    ageEl.title = 'Built ' + builtAt.toLocaleString() + (b.workflow ? ' by "' + b.workflow + '"' : '');
     parts.push(ageEl);
 
     el.textContent = '';
