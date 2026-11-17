@@ -1,13 +1,13 @@
 # krm-demo-org-site
 
-Sources of http://krm-demo.org.
+Sources of https://krm-demo.org.
 
 > **⚠️ This repository is wired to publish automatically. Read this before pushing.**
 >
 > | You do | What happens | Where |
 > |---|---|---|
 > | push to `main` | **preview** is rebuilt (~1 min) | https://krm-demo.github.io/krm-demo-org-site/ |
-> | push a tag `v*` (e.g. `v1.2.0`) | **AWS S3** (krm-demo.org) is updated (~1 min) | http://krm-demo.org |
+> | push a tag `v*` (e.g. `v1.2.0`) | **AWS S3** (krm-demo.org) is updated (~2 min) | https://krm-demo.org |
 >
 > Nothing reaches krm-demo.org without a `v*` tag.
 
@@ -16,7 +16,8 @@ Sources of http://krm-demo.org.
 - `site/` — the pages that get published. Only files under `site/` are deployed.
 - `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build.json`.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
-- `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`.
+- `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.
+- `.github/workflows/check-site.yml` — manual check of HTTPS, redirects and pages through CloudFront (Actions → Run workflow).
 
 ## Build info in the footer
 
@@ -66,8 +67,9 @@ Re-release an older tag: **Actions → Release to AWS S3 (krm-demo.org) → Run 
 - **Use relative links** (`css/style.css`, not `/css/style.css`). The preview lives under `/krm-demo-org-site/`,
   so root-relative links work on krm-demo.org but break on the preview.
 - **Error pages:** S3 serves `error.html`; GitHub Pages only knows `404.html`, so `pages.yml` copies `error.html` to `404.html`.
-- **Caching:** files are uploaded with `max-age=300`; a change can take up to 5 minutes to show in a browser (hard refresh helps).
-- **HTTP only:** krm-demo.org has no CloudFront/HTTPS yet; `https://krm-demo.org` does not work.
+- **Caching:** the release clears CloudFront's cache, so a release is live as soon as the workflow is green. Browsers may keep
+  their own copy up to 5 minutes (`max-age=300`) — a hard refresh helps.
+- **HTTPS everywhere:** `http://` redirects to `https://`, and `www.krm-demo.org` redirects to `krm-demo.org`.
 
 ## How it is configured (outside this repo)
 
@@ -77,11 +79,23 @@ These settings are not visible in the code — if something stops working, check
 - Settings → Pages → Source = **GitHub Actions** (no `gh-pages` branch is used).
 
 **AWS (account 560574854768)**
+```
+browser ──https──▶ CloudFront E3QPJMC44SZLZV ──http──▶ S3 website bucket krm-demo.org
+           (cert from ACM, www→apex redirect)          (index.html / error.html)
+```
 - S3 bucket `krm-demo.org` (us-west-2): static website hosting, index `index.html`, error `error.html`, public-read bucket policy.
-- Route 53 zone `krm-demo.org`: A record (alias) → `s3-website-us-west-2.amazonaws.com`.
+  It is the **origin** for CloudFront; its own address `http://krm-demo.org.s3-website-us-west-2.amazonaws.com` still works.
+- CloudFront distribution `E3QPJMC44SZLZV` (`d32q0v8m1f1zsx.cloudfront.net`): aliases `krm-demo.org`, `www.krm-demo.org`;
+  viewer HTTP → HTTPS redirect; cache policy *CachingOptimized* (respects the files' `max-age`); price class 100 (NA + EU edges).
+- CloudFront function `krm-demo-org-www-redirect` (viewer request): 301 from `www.krm-demo.org/...` to `https://krm-demo.org/...`.
+- ACM certificate (must be in **us-east-1** for CloudFront) for `krm-demo.org` + `www.krm-demo.org`, validated by DNS;
+  the two `_….krm-demo.org` CNAME records in Route 53 keep it auto-renewing — **do not delete them**.
+- Route 53 zone `krm-demo.org`: A + AAAA alias records for `krm-demo.org` and `www.krm-demo.org` → the CloudFront distribution.
+  (Before HTTPS, the apex A alias pointed at `s3-website-us-west-2.amazonaws.com` — setting it back is the emergency rollback.)
 - IAM OIDC provider `token.actions.githubusercontent.com` (audience `sts.amazonaws.com`) — lets GitHub Actions log in to AWS without stored keys.
 - IAM role `krm-demo-org-site-deploy`:
   - trust: only `repo:krm-demo@149853618/krm-demo-org-site@1460801082:ref:refs/tags/v*`
     (GitHub puts the owner and repo **numeric IDs** into this claim; renaming or recreating the repo changes it and breaks the release)
-  - permissions (inline policy `deploy-to-krm-demo-org-bucket`): `s3:ListBucket` on the bucket, `s3:PutObject` / `s3:DeleteObject` on its objects. Nothing else.
+  - permissions (inline policy `deploy-to-krm-demo-org-bucket`): `s3:ListBucket` on the bucket, `s3:PutObject` / `s3:DeleteObject` on its objects,
+    `cloudfront:CreateInvalidation` / `cloudfront:GetInvalidation` on distribution `E3QPJMC44SZLZV`. Nothing else.
 - If the release fails at **Configure AWS credentials**: CloudTrail (us-west-2) → event `AssumeRoleWithWebIdentity` shows the exact subject GitHub sent; compare it with the role's trust policy.
