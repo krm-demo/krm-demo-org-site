@@ -1,9 +1,11 @@
-name: Deploy krm-demo.org
+name: Release to krm-demo.org (S3)
 
+# Production deploy. Runs ONLY for version tags (v1.0.0, v1.2, ...), never for plain pushes to main.
+# Pushes to main go to the GitHub Pages preview instead (see pages.yml).
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    tags: ['v*']
+  workflow_dispatch:   # manual run: pick a v* tag in "Use workflow from" (the AWS role trusts tags only)
 
 permissions:
   id-token: write   # lets the job get a short-lived AWS session via OIDC
@@ -25,8 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Show what is being released
+        run: echo "Releasing ${GITHUB_REF_NAME} (${GITHUB_SHA::7}) to s3://${S3_BUCKET}"
+
       # Build: for now the site is plain HTML in site/, copied as-is to dist/.
-      # Replace this step with a static site generator later.
+      # Keep this step identical to the Build step in pages.yml.
       - name: Build
         run: |
           rm -rf dist
