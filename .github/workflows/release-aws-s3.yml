@@ -19,7 +19,8 @@ env:
   AWS_REGION: us-west-2
   S3_BUCKET: krm-demo.org
   AWS_ROLE_ARN: arn:aws:iam::560574854768:role/krm-demo-org-site-deploy
-  SITE_URL: http://krm-demo.org/
+  CLOUDFRONT_DISTRIBUTION_ID: E3QPJMC44SZLZV   # HTTPS in front of the bucket
+  SITE_URL: https://krm-demo.org/
 
 jobs:
   deploy:
@@ -45,6 +46,17 @@ jobs:
           aws s3 sync dist/ "s3://${S3_BUCKET}/" \
             --delete \
             --cache-control "public, max-age=300"
+
+      # CloudFront keeps copies of the pages; drop them so the release is visible right away.
+      - name: Invalidate CloudFront cache
+        run: |
+          id=$(aws cloudfront create-invalidation \
+                 --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+                 --paths '/*' \
+                 --query Invalidation.Id --output text)
+          echo "Invalidation ${id} started; waiting for it to complete..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --id "${id}"
 
       - name: Smoke test
         run: |
