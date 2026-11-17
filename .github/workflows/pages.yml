@@ -20,14 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Same build as the S3 deploy: site/ copied to dist/.
+      # Same build as the S3 release (see scripts/build.sh).
       - name: Build
-        run: |
-          rm -rf dist
-          cp -R site dist
-          # GitHub Pages only uses a custom error page named 404.html
-          [ -f dist/error.html ] && cp dist/error.html dist/404.html
-          ls -la dist
+        run: scripts/build.sh gh-pages
 
       - uses: actions/configure-pages@v5
 

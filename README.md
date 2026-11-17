@@ -14,14 +14,27 @@ Sources of http://krm-demo.org.
 ## Layout
 
 - `site/` — the pages that get published. Only files under `site/` are deployed.
+- `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build.json`.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`.
+
+## Build info in the footer
+
+Every build writes `build.json` (build number, tag/branch, commit, workflow run, time, target).
+`site/build-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
+`Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`, with links to the run and the commit.
+While the page stays open it re-checks `build.json` every minute and shows "new version deployed — reload".
+Served locally without a build, it shows "Local preview (no build info)".
+
+To get it on another page: add the span and `<script src="build-info.js"></script>`
+(relative path — so not on the error page, which is served from arbitrary URLs).
 
 ## Everyday workflow
 
 ```bash
 # 0. Try it locally (no commit needed)
 python3 -m http.server -d site 8000        # open http://localhost:8000
+# or with build info:  scripts/build.sh local && python3 -m http.server -d dist 8000
 
 # 1. Preview: commit and push to main, then check the GitHub Pages URL
 git commit -am "Rework header"

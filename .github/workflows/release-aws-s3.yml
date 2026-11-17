@@ -30,13 +30,9 @@ jobs:
       - name: Show what is being released
         run: echo "Releasing ${GITHUB_REF_NAME} (${GITHUB_SHA::7}) to s3://${S3_BUCKET}"
 
-      # Build: for now the site is plain HTML in site/, copied as-is to dist/.
-      # Keep this step identical to the Build step in pages.yml.
+      # Same build as the GitHub Pages preview (see scripts/build.sh).
       - name: Build
-        run: |
-          rm -rf dist
-          cp -R site dist
-          ls -la dist
+        run: scripts/build.sh aws-s3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -54,3 +50,5 @@ jobs:
         run: |
           curl -fsS "${SITE_URL}" -o /tmp/index.html
           cmp /tmp/index.html dist/index.html && echo "Live index.html matches the build."
+          curl -fsS "${SITE_URL}build.json" | jq -e --arg sha "$GITHUB_SHA" '.sha == $sha' \
+            && echo "Live build.json is this build."
