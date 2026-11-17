@@ -1,0 +1,51 @@
+name: Deploy krm-demo.org
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # lets the job get a short-lived AWS session via OIDC
+  contents: read
+
+concurrency:
+  group: deploy-krm-demo-org
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  S3_BUCKET: krm-demo.org
+  AWS_ROLE_ARN: arn:aws:iam::560574854768:role/krm-demo-org-site-deploy
+  SITE_URL: http://krm-demo.org/
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build: for now the site is plain HTML in site/, copied as-is to dist/.
+      # Replace this step with a static site generator later.
+      - name: Build
+        run: |
+          rm -rf dist
+          cp -R site dist
+          ls -la dist
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync dist/ "s3://${S3_BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=300"
+
+      - name: Smoke test
+        run: |
+          curl -fsS "${SITE_URL}" -o /tmp/index.html
+          cmp /tmp/index.html dist/index.html && echo "Live index.html matches the build."
