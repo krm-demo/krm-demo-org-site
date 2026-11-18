@@ -1,6 +1,6 @@
 // build-site-info.js — shows which build of the site is being served and when it was published, e.g.
 //   krm-demo.org (aws-s3):  "<GitHub mark> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday"
-//   preview (gh-pages):     "<GitHub mark> v0.3.0.47 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago"
+//   preview (gh-pages):     "<GitHub mark> v0.3.0-preview.47 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago"
 // The GitHub mark links to the sources (tag or main), the version to the workflow run that built it.
 // The commit hash is kept in build-site.json only.
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
@@ -110,7 +110,6 @@
     if (href) {
       n = document.createElement('a');
       n.href = href; n.target = '_blank'; n.rel = 'noopener';
-      n.className = 'link-secondary';
     } else {
       n = document.createElement('span');
     }
@@ -149,7 +148,7 @@
 
   function reloadLink(text) {
     var n = document.createElement('a');
-    n.href = ''; n.className = 'fw-bold';
+    n.href = ''; n.className = 'foot-reload';
     n.textContent = text;
     n.title = 'A newer build was published while this page was open';
     return n;
@@ -236,6 +235,27 @@
     if (!isNaN(at)) tickTimer = setTimeout(render, nextTickMs(at, now));   // keep "… ago" current
   }
 
+  // A small notice in the corner of the window, so that a reader far from the footer sees it too.
+  function notify() {
+    if (document.querySelector('.new-version')) return;
+    var ru = (document.documentElement.lang || '').indexOf('ru') === 0;
+    var box = document.createElement('div');
+    box.className = 'new-version';
+    box.setAttribute('role', 'status');
+    box.appendChild(document.createTextNode(ru ? 'Опубликована новая версия' : 'New version published'));
+    var reload = document.createElement('a');
+    reload.href = '';
+    reload.textContent = ru ? 'Обновить' : 'Reload';
+    box.appendChild(reload);
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = '×';
+    close.title = ru ? 'Скрыть' : 'Dismiss';
+    close.addEventListener('click', function () { box.remove(); });
+    box.appendChild(close);
+    document.body.appendChild(box);
+  }
+
   // ---------- loading and polling ----------
 
   function load() {
@@ -244,7 +264,7 @@
       .then(function (b) {
         var key = [b.sha, b.run_id, b.run_attempt, b.built_at].join('|');
         if (shownKey === null) { shownKey = key; build = b; render(); }
-        else if (key !== shownKey && !newVersion) { newVersion = true; render(); }
+        else if (key !== shownKey && !newVersion) { newVersion = true; render(); notify(); }
       })
       .catch(function () {
         if (shownKey === null) { noInfo = 'Local preview (no build info)'; render(); }

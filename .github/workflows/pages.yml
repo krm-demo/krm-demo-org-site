@@ -22,6 +22,13 @@ jobs:
         with:
           fetch-depth: 0   # history and tags, so build.sh can find the latest v* tag for the version
 
+      # Python and Node packages that turn docs/*.md into pages (see scripts/install-build-deps.sh).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build dependencies
+        run: scripts/install-build-deps.sh
+
       # Same build as the S3 release (see scripts/build.sh).
       - name: Build
         run: scripts/build.sh gh-pages

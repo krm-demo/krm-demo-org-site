@@ -13,12 +13,19 @@ Sources of https://krm-demo.org.
 
 ## Layout
 
-- `site/` — the pages that get published. Only files under `site/` are deployed.
-- `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build-site.json`.
-- `docs/*.md` — articles linked from the home page under "Pulp Fiction". The Markdown is the source; each page is generated with
-  `scripts/md-to-html.py docs/<name>.md site/<name>.html` (needs Python's `markdown` package) and both files are committed.
-  Translations are named `<name>.<lang>.md` (e.g. `chebyshev.en.md`, `chebyshev.ru.md`); each page links to the others.
-  Math in `$...$` / `$$...$$` is rendered by KaTeX; proofs go in `<details markdown="1"><summary>Proof</summary> … </details>`.
+- `site/` — the hand-written pages and assets: `index.html`, `error.html`, `site.css` (layout and the skins), `site.js` (skin switcher),
+  `build-site-info.js` (footer). No CSS framework is used.
+- `docs/*.md` — the articles listed on the home page under "Pulp Fiction". The build turns each one into a page; the pages are not committed.
+  - Translations are named `<name>.<lang>.md` (`chebyshev.en.md`, `chebyshev.ru.md`); each page links to the others.
+  - A heading that starts with a number gets the same id in every language (`## 3. …` → `s3`, `### 1.4 …` → `s1-4`).
+    Link to it as `[§1.4](chebyshev.en.md#s1-4)`: on the site that opens the section, on GitHub the file.
+  - Math in `$...$` / `$$...$$` is rendered with KaTeX during the build; a formula that does not parse fails the build.
+  - Proofs and long listings go in `<details markdown="1"><summary>Proof</summary> … </details>`; code blocks are highlighted.
+  - `docs/figures/*.svg` are drawn by `scripts/make-figures.py` (needs NumPy and SciPy; run by hand, results committed).
+  - The full list of what an article may contain is at the top of `scripts/md-to-html.py`.
+- `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/`, generates the article pages,
+  copies KaTeX's stylesheet and fonts to `dist/vendor/katex/`, and writes `dist/build-site.json`.
+- `scripts/install-build-deps.sh` — installs what the build needs (Python: `markdown`, `pygments`; Node: `katex`). Run it once before a local build.
 - `drafts/` — material being prepared; not part of the site.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.
@@ -28,10 +35,10 @@ Sources of https://krm-demo.org.
 
 Every build writes `build-site.json` (build number, tag/branch, commit, workflow run, time, target).
 `site/build-site-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
-The version is the release tag (on `main`: the latest `v*` tag before it) plus the workflow run number, written by `scripts/build.sh`.
+The version is written by `scripts/build.sh`: for a release, the tag plus the run number of the release workflow; for the preview, the latest `v*` tag marked `-preview.` plus the run number of the preview workflow. The two workflows count their runs separately.
 
 - krm-demo.org (`aws-s3`): `<GitHub mark> v0.3.0.3 · published 2026-Nov-18 (Wed) 01:20 EST, 3 minutes ago` (release run #3 of tag v0.3.0).
-- Preview (`gh-pages`): `<GitHub mark> v0.3.0.47 · gh-pages · published …` (preview run #47, latest tag v0.3.0).
+- Preview (`gh-pages`): `<GitHub mark> v0.3.0-preview.47 · gh-pages · published …` (preview run #47, latest tag v0.3.0).
 - Links: the GitHub mark → the sources (the tag, or `main`); the version → the workflow run that built it.
 - The commit hash is not shown; it stays in `build-site.json` with everything else.
 
@@ -42,7 +49,7 @@ Hover the time for the exact UTC time.
   `this Thursday`, `last Wednesday`, `two weeks ago`, `last month`, `4 months ago`, `last year`, `3 years ago`.
 - The line never wraps. It has six variants, from the full line down to `v0.2.0 · yesterday`. The longest one that fits the width is shown, and the choice is re-checked when the width changes.
 
-While the page stays open it re-checks `build-site.json` about every minute (60–70 s, jittered) and adds "new version published — reload" (shortened to `↻` on narrow screens).
+While the page stays open it re-checks `build-site.json` about every minute (60–70 s, jittered) and adds "new version published — reload" (shortened to `↻` on narrow screens), plus a small notice in the corner of the window.
 It doesn't poll while the tab is hidden, and checks at once when the tab becomes visible again.
 The release uploads `build-site.json` with `Cache-Control: max-age=10` (other files: 300 s), so CloudFront never hides a new version for long.
 Served locally without a build, it shows "Local preview (no build info)".
@@ -50,12 +57,18 @@ Served locally without a build, it shows "Local preview (no build info)".
 To get it on another page: add the span and `<script src="build-site-info.js"></script>`
 (relative path — so not on the error page, which is served from arbitrary URLs).
 
+## Skins
+
+The switch in the header chooses the look: Light, Dark, Scientific or Pulp. The choice is stored in the cookie `skin` for a year;
+without it the page follows the system's light or dark setting. A skin is one block of CSS variables in `site/site.css`
+(`html[data-skin="…"]`); to add one, add a block, a swatch rule next to the others, and its name in `site/site.js`.
+
 ## Everyday workflow
 
 ```bash
 # 0. Try it locally (no commit needed)
-python3 -m http.server -d site 8000        # open http://localhost:8000
-# or with build info:  scripts/build.sh local && python3 -m http.server -d dist 8000
+scripts/install-build-deps.sh              # once: Python and Node packages for the article pages
+scripts/build.sh local && python3 -m http.server -d dist 8000     # open http://localhost:8000
 
 # 1. Preview: commit and push to main, then check the GitHub Pages URL
 git commit -am "Rework header"
