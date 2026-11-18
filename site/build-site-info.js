@@ -1,6 +1,8 @@
 // build-site-info.js — shows which build of the site is being served and when it was published, e.g.
-//   krm-demo.org (aws-s3):  "v0.3.0 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday"
-//   preview (gh-pages):     "<GitHub mark> build #12 · main · 4bc33a4 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago"
+//   krm-demo.org (aws-s3):  "<GitHub mark> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday"
+//   preview (gh-pages):     "<GitHub mark> v0.3.0.47 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago"
+// The GitHub mark links to the sources (tag or main), the version to the workflow run that built it.
+// The commit hash is kept in build-site.json only.
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
 //
@@ -132,13 +134,13 @@
     var ns = 'http://www.w3.org/2000/svg';
     var svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('width', '1em');
-    svg.setAttribute('height', '1em');
+    svg.setAttribute('width', '1.4em');
+    svg.setAttribute('height', '1.4em');
     svg.setAttribute('fill', 'currentColor');
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'GitHub workflow');
-    svg.style.verticalAlign = '-0.125em';
-    svg.style.marginRight = '0.3em';
+    svg.setAttribute('aria-label', 'Sources on GitHub');
+    svg.style.verticalAlign = '-0.35em';
+    svg.style.marginRight = '0.45em';
     var path = document.createElementNS(ns, 'path');
     path.setAttribute('d', 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z');
     svg.appendChild(path);
@@ -160,77 +162,56 @@
     var runUrl = gh && b.run_id ? gh + '/actions/runs/' + b.run_id : null;
     var at = new Date(b.built_at);
     var hasDate = !isNaN(at);
-    var tip = hasDate
-      ? 'Published ' + at.toISOString().replace('.000', '') + ' (UTC)' + (b.workflow ? ' by "' + b.workflow + '"' : '')
-      : '';
+    var tip = hasDate ? 'Published ' + at.toISOString().replace('.000', '') + ' (UTC)' : '';
     var rel = hasDate ? relative(at, now) : '';
     var zone = hasDate ? zoneName(at) : '';
-    var runNo = b.run_number ? b.run_number + (b.run_attempt > 1 ? '.' + b.run_attempt : '') : '';
-
-    function run(long) {
-      if (!runNo) return link('Local build', null);
-      var r = link((long ? 'build #' : '#') + runNo, runUrl, 'GitHub workflow run');
-      r.insertBefore(githubMark(), r.firstChild);
-      return r;
-    }
-    function ref(title) { return b.ref ? link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null, title) : null; }
-    function sha() { return b.sha ? link(b.sha.slice(0, 7), gh ? gh + '/commit/' + b.sha : null) : null; }
-    function target() { return b.target ? link(b.target, null) : null; }
-    function when(text, href) { return hasDate ? link(text, href, tip) : null; }
-
     var full = hasDate ? natural(at) : '';
+    var short = hasDate ? naturalShort(at) : '';
+    var isPublic = b.target === 'aws-s3';
+
+    // The GitHub mark → the sources this build was made from (the tag in production, main on the preview)
+    function source() {
+      if (!gh || !b.ref) return null;
+      var a = link([], gh + '/tree/' + encodeURI(b.ref), 'Sources on GitHub: ' + b.ref);
+      a.appendChild(githubMark());
+      return a;
+    }
+    // The version (latest v* tag + workflow run number) → the workflow run that built it
+    function version() {
+      var v = b.version || b.ref || 'local build';
+      var runTitle = b.workflow ? 'Built by workflow "' + b.workflow + '"' + (b.run_number ? ', run #' + b.run_number : '') : null;
+      return link(v, runUrl, runTitle);
+    }
+    // The preview names its environment; the public site doesn't need to.
+    function env() { return isPublic || !b.target ? null : link(b.target, null); }
+    function when(parts) { return hasDate ? link(parts, null, tip) : null; }
     // [published] 2026-Nov-16 (Mon) 23:12 EST, [yesterday]
     function stamp(withZone) {
-      return [dim('published'), ' ' + full + (withZone && zone ? ' ' + zone : '') + ', ', dim(rel)];
-    }
-    var short = hasDate ? naturalShort(at) : '';
-
-    // The public site (AWS S3 / krm-demo.org) shows only the version and when it was published.
-    // Build number and commit stay in build-site.json and in the version's tooltip.
-    if (b.target === 'aws-s3') {
-      var details = [runNo && 'build #' + runNo, b.sha && 'commit ' + b.sha.slice(0, 7)].filter(Boolean).join(' · ');
-      return [
-        // v0.3.0 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday · new version published — reload
-        [ref(details), when(stamp(true)), newVersion && reloadLink('new version published — reload')],
-        // v0.3.0 · published 2026-Nov-16 (Mon) 23:12, yesterday · new version — reload
-        [ref(details), when(stamp(false)), newVersion && reloadLink('new version — reload')],
-        // v0.3.0 · 2026-Nov-16 (Mon) 23:12 · yesterday · ↻ reload
-        [ref(details), when(full), when([dim(rel)]), newVersion && reloadLink('↻ reload')],
-        // v0.3.0 · Nov-16 (Mon) 23:12 · yesterday · ↻
-        [ref(details), when(short), when([dim(rel)]), newVersion && reloadLink('↻')],
-        // v0.3.0 · yesterday · ↻
-        [ref(details), when([dim(rel)]), newVersion && reloadLink('↻')],
-        // yesterday
-        [when([dim(rel)]) || ref(details), newVersion && reloadLink('↻')]
-      ];
+      return when([dim('published'), ' ' + full + (withZone && zone ? ' ' + zone : '') + ', ', dim(rel)]);
     }
 
-    // Preview (GitHub Pages) and local builds show the details too. The commit is shown only when
-    // the ref is a branch (main): a version tag already says which commit it is.
-    var isTag = /^v\d/.test(b.ref || '');
-    function commit() { return isTag ? null : sha(); }
-    var v = [
-      // build #12 · main · 4bc33a4 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago · new version published — reload
-      [run(true), ref(), commit(), target(), when(stamp(true), runUrl),
-        newVersion && reloadLink('new version published — reload')],
-      // build #12 · main · 4bc33a4 · published 2026-Nov-17 (Tue) 22:18, 20 minutes ago · new version — reload
-      [run(true), ref(), commit(), when(stamp(false), runUrl), newVersion && reloadLink('new version — reload')],
-      // #12 · main · 4bc33a4 · 2026-Nov-17 (Tue) 22:18 · 20 minutes ago · ↻ reload
-      [run(false), ref(), commit(), when(full, runUrl), when([dim(rel)], runUrl), newVersion && reloadLink('↻ reload')],
-      // #12 · 4bc33a4 · Nov-17 (Tue) 22:18 · 20 minutes ago · ↻
-      [run(false), commit() || ref(), when(short, runUrl), when([dim(rel)], runUrl), newVersion && reloadLink('↻')],
-      // 4bc33a4 · 20 minutes ago · ↻
-      [commit() || ref(), when([dim(rel)], runUrl), newVersion && reloadLink('↻')],
-      // 20 minutes ago
-      [when([dim(rel)], runUrl) || ref(), newVersion && reloadLink('↻')]
+    // Each variant: [icon, the rest joined with " · "]. The commit stays in build-site.json only.
+    return [
+      // <GitHub> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday · new version published — reload
+      [source(), [version(), env(), stamp(true), newVersion && reloadLink('new version published — reload')]],
+      // <GitHub> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12, yesterday · new version — reload
+      [source(), [version(), env(), stamp(false), newVersion && reloadLink('new version — reload')]],
+      // <GitHub> v0.3.0.3 · 2026-Nov-16 (Mon) 23:12 · yesterday · ↻ reload
+      [source(), [version(), when(full), when([dim(rel)]), newVersion && reloadLink('↻ reload')]],
+      // <GitHub> v0.3.0.3 · Nov-16 (Mon) 23:12 · yesterday · ↻
+      [source(), [version(), when(short), when([dim(rel)]), newVersion && reloadLink('↻')]],
+      // v0.3.0.3 · yesterday · ↻
+      [null, [version(), when([dim(rel)]), newVersion && reloadLink('↻')]],
+      // yesterday
+      [null, [when([dim(rel)]) || version(), newVersion && reloadLink('↻')]]
     ];
-    return v;
   }
 
-  function fill(parts) {
+  function fill(variant) {
     el.textContent = '';
+    if (variant[0]) el.appendChild(variant[0]);
     var first = true;
-    parts.forEach(function (p) {
+    variant[1].forEach(function (p) {
       if (!p) return;
       if (!first) el.appendChild(document.createTextNode(' · '));
       el.appendChild(p);

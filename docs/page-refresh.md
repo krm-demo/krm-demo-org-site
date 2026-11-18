@@ -11,7 +11,7 @@ Both environments are plain static files. An open page learns about a new build 
 | Published by | Pushing a `v*` tag → workflow `release-aws-s3.yml` | Pushing to `main` → workflow `pages.yml` |
 | How it goes live | S3 sync, then CloudFront invalidation of `/*`; the workflow waits until it completes | GitHub Pages deploy, about 25 s per run |
 | Caching | Pages: `max-age=300`; `build-site.json`: `max-age=10` | Fixed `max-age=600` on every file, no custom headers possible ([GitHub Support](https://backiee.wasmer.app/http_webapps_stackexchange_com/posts/119294/revisions)) |
-| Footer shows | Version and publish time only | Build number, branch, commit, target and publish time |
+| Footer shows | GitHub mark, version (tag + run number), publish time | The same, plus `gh-pages` |
 | New-build check | `build-site.json` every 60–70 s, paused while the tab is hidden | Same |
 | Delay an open page sees | Up to ~80 s after the release finishes (poll + 10 s edge cache) | Up to ~70 s after the deploy finishes |
 
@@ -21,8 +21,10 @@ The page always asks for `build-site.json` with `cache: 'no-store'`, so the brow
 
 The footer is filled by `build-site-info.js` from `build-site.json`, which every build writes (build number, tag or branch, commit, workflow run, time, target).
 
-- **Production:** `v0.3.0 · published 2026-Nov-17 (Tue) 23:05 EST, 5 minutes ago`. Hovering the version shows the build number and commit.
-- **Staging:** `build #12 · main · 7422536 · gh-pages · published 2026-Nov-17 (Tue) 22:40 EST, 20 minutes ago`. The commit is shown because `main` alone doesn't say which change is live; for a version tag it is left out.
+- **Version** = release tag (on `main`: the latest `v*` tag before it) + workflow run number: `v0.3.0.3` in production, `v0.3.0.47` on the preview. It links to the workflow run that built it; the GitHub mark before it links to the sources (the tag, or `main`).
+- **Production:** `v0.3.0.3 · published 2026-Nov-18 (Wed) 01:20 EST, 3 minutes ago`.
+- **Staging:** `v0.3.0.47 · gh-pages · published 2026-Nov-18 (Wed) 01:20 EST, 3 minutes ago`.
+- The commit hash is not shown; `build-site.json` keeps it with the rest of the build information.
 - **Time** is in the visitor's time zone, in the format of `krm-demo/core-utils` (`yyyy-MM-dd (EEE) HH:mm`) but with a three-letter month: `2026-Nov-17 (Tue) 23:05`. The words around it ("published", "5 minutes ago") are dimmer and in italics. Hover it for the exact UTC time.
 - **"How long ago"** follows the calendar: `42 seconds ago`, `12 minutes ago`, `3 hours ago`, `yesterday`, `day before yesterday`, `this Thursday`, `last Wednesday`, `two weeks ago`, `last month`, `4 months ago`, `last year`.
 - **Never wraps:** six variants, from the full line down to `v0.3.0 · yesterday`. The longest one that fits is shown, and the choice is re-checked when the width changes.

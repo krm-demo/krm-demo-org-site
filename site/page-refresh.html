@@ -51,8 +51,8 @@
 </tr>
 <tr>
 <td>Footer shows</td>
-<td>Version and publish time only</td>
-<td>Build number, branch, commit, target and publish time</td>
+<td>GitHub mark, version (tag + run number), publish time</td>
+<td>The same, plus <code>gh-pages</code></td>
 </tr>
 <tr>
 <td>New-build check</td>
@@ -70,8 +70,10 @@
 <h2>The footer</h2>
 <p>The footer is filled by <code>build-site-info.js</code> from <code>build-site.json</code>, which every build writes (build number, tag or branch, commit, workflow run, time, target).</p>
 <ul>
-<li><strong>Production:</strong> <code>v0.3.0 · published 2026-Nov-17 (Tue) 23:05 EST, 5 minutes ago</code>. Hovering the version shows the build number and commit.</li>
-<li><strong>Staging:</strong> <code>build #12 · main · 7422536 · gh-pages · published 2026-Nov-17 (Tue) 22:40 EST, 20 minutes ago</code>. The commit is shown because <code>main</code> alone doesn't say which change is live; for a version tag it is left out.</li>
+<li><strong>Version</strong> = release tag (on <code>main</code>: the latest <code>v*</code> tag before it) + workflow run number: <code>v0.3.0.3</code> in production, <code>v0.3.0.47</code> on the preview. It links to the workflow run that built it; the GitHub mark before it links to the sources (the tag, or <code>main</code>).</li>
+<li><strong>Production:</strong> <code>v0.3.0.3 · published 2026-Nov-18 (Wed) 01:20 EST, 3 minutes ago</code>.</li>
+<li><strong>Staging:</strong> <code>v0.3.0.47 · gh-pages · published 2026-Nov-18 (Wed) 01:20 EST, 3 minutes ago</code>.</li>
+<li>The commit hash is not shown; <code>build-site.json</code> keeps it with the rest of the build information.</li>
 <li><strong>Time</strong> is in the visitor's time zone, in the format of <code>krm-demo/core-utils</code> (<code>yyyy-MM-dd (EEE) HH:mm</code>) but with a three-letter month: <code>2026-Nov-17 (Tue) 23:05</code>. The words around it ("published", "5 minutes ago") are dimmer and in italics. Hover it for the exact UTC time.</li>
 <li><strong>"How long ago"</strong> follows the calendar: <code>42 seconds ago</code>, <code>12 minutes ago</code>, <code>3 hours ago</code>, <code>yesterday</code>, <code>day before yesterday</code>, <code>this Thursday</code>, <code>last Wednesday</code>, <code>two weeks ago</code>, <code>last month</code>, <code>4 months ago</code>, <code>last year</code>.</li>
 <li><strong>Never wraps:</strong> six variants, from the full line down to <code>v0.3.0 · yesterday</code>. The longest one that fits is shown, and the choice is re-checked when the width changes.</li>
