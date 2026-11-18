@@ -23,8 +23,13 @@ Sources of https://krm-demo.org.
 
 Every build writes `build-site.json` (build number, tag/branch, commit, workflow run, time, target).
 `site/build-site-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
-`build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday`.
-Links: build number and the publish time → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact UTC time.
+- krm-demo.org (`aws-s3`), the public site: `v0.3.0 · published 2026-11-16 (Mon) 23:12 EST, yesterday`.
+  Only the version and the time are shown; hover the version for build number and commit.
+- Preview (`gh-pages`) and local builds: `build #12 · main · 4bc33a4 · gh-pages · published 2026-11-17 (Tue) 22:18 EST, 20 minutes ago`.
+  The commit is shown only for a branch (`main`), since a version tag already identifies it.
+  Links: build number and the time → the workflow run; tag/branch → the repo at that ref; hash → the commit.
+
+Hover the time for the exact UTC time. Everything stays in `build-site.json`, whichever parts are shown.
 
 - The time is in the visitor's time zone, in the "natural" format of `krm-demo/core-utils` (`yyyy-MM-dd (EEE) HH:mm`).
 - "How long ago" follows the calendar: `42 seconds ago`, `12 minutes ago`, `3 hours ago`, `yesterday`, `day before yesterday`,

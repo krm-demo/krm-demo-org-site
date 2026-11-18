@@ -1,5 +1,6 @@
 // build-site-info.js — shows which build of the site is being served and when it was published, e.g.
-//   "<GitHub mark> build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday"
+//   krm-demo.org (aws-s3):  "v0.3.0 · published 2026-11-16 (Mon) 23:12 EST, yesterday"
+//   preview (gh-pages):     "<GitHub mark> build #12 · main · 4bc33a4 · gh-pages · published 2026-11-17 (Tue) 22:18 EST, 20 minutes ago"
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
 //
@@ -160,26 +161,53 @@
       r.insertBefore(githubMark(), r.firstChild);
       return r;
     }
-    function ref() { return b.ref ? link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null) : null; }
+    function ref(title) { return b.ref ? link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null, title) : null; }
     function sha() { return b.sha ? link(b.sha.slice(0, 7), gh ? gh + '/commit/' + b.sha : null) : null; }
     function target() { return b.target ? link(b.target, null) : null; }
-    function when(text) { return hasDate ? link(text, runUrl, tip) : null; }
+    function when(text, href) { return hasDate ? link(text, href, tip) : null; }
 
     var full = hasDate ? natural(at) : '';
+    var published = 'published ' + full;
+    var short = hasDate ? naturalShort(at) : '';
+
+    // The public site (AWS S3 / krm-demo.org) shows only the version and when it was published.
+    // Build number and commit stay in build-site.json and in the version's tooltip.
+    if (b.target === 'aws-s3') {
+      var details = [runNo && 'build #' + runNo, b.sha && 'commit ' + b.sha.slice(0, 7)].filter(Boolean).join(' · ');
+      return [
+        // v0.3.0 · published 2026-11-16 (Mon) 23:12 EST, yesterday · new version published — reload
+        [ref(details), when(published + (zone ? ' ' + zone : '') + ', ' + rel), newVersion && reloadLink('new version published — reload')],
+        // v0.3.0 · published 2026-11-16 (Mon) 23:12, yesterday · new version — reload
+        [ref(details), when(published + ', ' + rel), newVersion && reloadLink('new version — reload')],
+        // v0.3.0 · 2026-11-16 (Mon) 23:12 · yesterday · ↻ reload
+        [ref(details), when(full), when(rel), newVersion && reloadLink('↻ reload')],
+        // v0.3.0 · 11-16 (Mon) 23:12 · yesterday · ↻
+        [ref(details), when(short), when(rel), newVersion && reloadLink('↻')],
+        // v0.3.0 · yesterday · ↻
+        [ref(details), when(rel), newVersion && reloadLink('↻')],
+        // yesterday
+        [when(rel) || ref(details), newVersion && reloadLink('↻')]
+      ];
+    }
+
+    // Preview (GitHub Pages) and local builds show the details too. The commit is shown only when
+    // the ref is a branch (main): a version tag already says which commit it is.
+    var isTag = /^v\d/.test(b.ref || '');
+    function commit() { return isTag ? null : sha(); }
     var v = [
-      // build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday · new version published — reload
-      [run(true), ref(), sha(), target(), when('published ' + full + (zone ? ' ' + zone : '') + ', ' + rel),
+      // build #12 · main · 4bc33a4 · gh-pages · published 2026-11-17 (Tue) 22:18 EST, 20 minutes ago · new version published — reload
+      [run(true), ref(), commit(), target(), when(published + (zone ? ' ' + zone : '') + ', ' + rel, runUrl),
         newVersion && reloadLink('new version published — reload')],
-      // build #7 · v0.2.0 · a10737a · published 2026-11-16 (Mon) 23:12, yesterday · new version — reload
-      [run(true), ref(), sha(), when('published ' + full + ', ' + rel), newVersion && reloadLink('new version — reload')],
-      // #7 · v0.2.0 · a10737a · 2026-11-16 (Mon) 23:12 · yesterday · ↻ reload
-      [run(false), ref(), sha(), when(full), when(rel), newVersion && reloadLink('↻ reload')],
-      // #7 · v0.2.0 · 11-16 (Mon) 23:12 · yesterday · ↻
-      [run(false), ref(), when(hasDate ? naturalShort(at) : ''), when(rel), newVersion && reloadLink('↻')],
-      // v0.2.0 · yesterday · ↻
-      [ref(), when(rel), newVersion && reloadLink('↻')],
-      // yesterday
-      [when(rel) || ref(), newVersion && reloadLink('↻')]
+      // build #12 · main · 4bc33a4 · published 2026-11-17 (Tue) 22:18, 20 minutes ago · new version — reload
+      [run(true), ref(), commit(), when(published + ', ' + rel, runUrl), newVersion && reloadLink('new version — reload')],
+      // #12 · main · 4bc33a4 · 2026-11-17 (Tue) 22:18 · 20 minutes ago · ↻ reload
+      [run(false), ref(), commit(), when(full, runUrl), when(rel, runUrl), newVersion && reloadLink('↻ reload')],
+      // #12 · 4bc33a4 · 11-17 (Tue) 22:18 · 20 minutes ago · ↻
+      [run(false), commit() || ref(), when(short, runUrl), when(rel, runUrl), newVersion && reloadLink('↻')],
+      // 4bc33a4 · 20 minutes ago · ↻
+      [commit() || ref(), when(rel, runUrl), newVersion && reloadLink('↻')],
+      // 20 minutes ago
+      [when(rel, runUrl) || ref(), newVersion && reloadLink('↻')]
     ];
     return v;
   }
