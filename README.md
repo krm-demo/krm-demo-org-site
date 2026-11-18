@@ -15,8 +15,11 @@ Sources of https://krm-demo.org.
 
 - `site/` — the pages that get published. Only files under `site/` are deployed.
 - `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build-site.json`.
-- `docs/*.md` — articles linked from the home page under "Interesting reading". The Markdown is the source; the page is generated with
-  `scripts/md-to-html.py docs/page-refresh.md site/page-refresh.html` (needs Python's `markdown` package) and both files are committed.
+- `docs/*.md` — articles linked from the home page under "Pulp Fiction". The Markdown is the source; each page is generated with
+  `scripts/md-to-html.py docs/<name>.md site/<name>.html` (needs Python's `markdown` package) and both files are committed.
+  Translations are named `<name>.<lang>.md` (e.g. `chebyshev.en.md`, `chebyshev.ru.md`); each page links to the others.
+  Math in `$...$` / `$$...$$` is rendered by KaTeX; proofs go in `<details markdown="1"><summary>Proof</summary> … </details>`.
+- `drafts/` — material being prepared; not part of the site.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.
 - `.github/workflows/check-site.yml` — manual check of HTTPS, redirects and pages through CloudFront (Actions → Run workflow).
