@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>От МНК до Фурье-продолжения: полиномы Чебышёва и аппроксимация на кольце</title>
+<!--
+  Draft, not part of the site. HTML part of the e-mail "От МНК до Фурье-продолжения: полиномы Чебышёва
+  и аппроксимация на кольце" (Gmail, sent 2026-11-18 05:57 UTC), written together with Gemini.
+  Kept as it was in the e-mail: only this <html>/<head> wrapper was added so the file opens in a browser.
+-->
+</head>
+<body>
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;color:#1f2937;line-height:1.65;padding:20px">
+  <h1 style="color:#111827;font-size:24px;border-bottom:2px solid #2563eb;padding-bottom:10px;margin-bottom:16px">
+    От МНК до Фурье-продолжения: как сплющить окружность, обмануть эффект Гиббса и при чём тут паровой котёл XIX века
+  </h1>
+  <p style="color:#4b5563;font-size:15px;font-style:italic;margin-bottom:24px">
+    Конспект нашей дискуссии об оптимальной аппроксимации данных на отрезке и на замкнутом кольце — специально для раздела <strong>Interesting Reading</strong>.
+  </p>
+
+  <h2 style="color:#1e40af;font-size:19px;margin-top:28px">1. Оптимальный выбор для отрезка [a, b]: Полиномы Чебышёва</h2>
+  <p>
+    Когда требуется приблизить <em>N</em> точек с помощью <em>K</em> параметров (где <em>K &lt; N</em>) по методу наименьших квадратов (МНК), выбор базисных функций решает всё. Обычные степенные полиномы (1, <em>x</em>, <em>x</em><sup>2</sup>, …) при <em>K &gt; 6</em> вызывают феномен Рунге — кривая начинает резко осциллировать на краях интервала.
+  </p>
+  <ul style="padding-left:20px">
+    <li style="margin-bottom:8px">
+      <strong>Идеальный базис — полиномы Чебышёва первого рода T<sub>n</sub>(x):</strong> среди всех многочленов со старшим коэффициентом 1 именно они меньше всего уклоняются от нуля на отрезке [-1, 1]. Ошибка распределяется равномерно (равноволновая пульсация), а не накапливается на границах.
+    </li>
+    <li style="margin-bottom:8px">
+      <strong>Идеальная сетка — узлы Чебышёва:</strong> <code>x<sub>i</sub> = cos((2i + 1)π / 2N)</code> для <code>i = 0, …, N-1</code>. Точки сгущаются к концам отрезка (-1 и 1). На этой сетке полиномы Чебышёва дискретно ортогональны: матрица <em>A<sup>T</sup>A</em> становится диагональной, и все коэффициенты находятся за <em>O(N log N)</em> через дискретное косинусное преобразование (DCT).
+    </li>
+  </ul>
+
+  <h2 style="color:#1e40af;font-size:19px;margin-top:28px">2. Замыкаем интервал в кольцо [0, 2π): Ряд Фурье</h2>
+  <p>
+    Если склеить концы отрезка в окружность и перейти к периодической функции от угла φ ∈ [0, 2π), краевые эффекты исчезают полностью.
+  </p>
+  <ul style="padding-left:20px">
+    <li style="margin-bottom:8px">
+      <strong>Идеальный базис — тригонометрический ряд:</strong> комбинация <code>cos(mφ)</code> и <code>sin(mφ)</code>. Для гладких периодических функций коэффициенты убывают экспоненциально, а отбрасывание высоких частот по теореме Парсеваля гарантирует абсолютный минимум суммы квадратов ошибок.
+    </li>
+    <li style="margin-bottom:8px">
+      <strong>Идеальная сетка — равномерная:</strong> <code>φ<sub>n</sub> = 2πn / N</code>. Задача МНК вырождается в классическое быстрое преобразование Фурье (FFT) со сложностью <em>O(N log N)</em>.
+    </li>
+  </ul>
+
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
+    <thead>
+      <tr style="background-color:#eff6ff;text-align:left">
+        <th style="border:1px solid #cbd5e1;padding:10px">Характеристика</th>
+        <th style="border:1px solid #cbd5e1;padding:10px">Отрезок [-1, 1]</th>
+        <th style="border:1px solid #cbd5e1;padding:10px">Кольцо [0, 2π)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border:1px solid #cbd5e1;padding:10px"><strong>Базис (K параметров)</strong></td>
+        <td style="border:1px solid #cbd5e1;padding:10px">Полиномы Чебышёва T<sub>k</sub>(x)</td>
+        <td style="border:1px solid #cbd5e1;padding:10px">cos(mφ), sin(mφ)</td>
+      </tr>
+      <tr style="background-color:#f8fafc">
+        <td style="border:1px solid #cbd5e1;padding:10px"><strong>Оптимальная сетка (N точек)</strong></td>
+        <td style="border:1px solid #cbd5e1;padding:10px">Узлы Чебышёва (сгущение к краям)</td>
+        <td style="border:1px solid #cbd5e1;padding:10px">Строго равномерная</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #cbd5e1;padding:10px"><strong>Быстрый алгоритм МНК</strong></td>
+        <td style="border:1px solid #cbd5e1;padding:10px">DCT или QR-разложение</td>
+        <td style="border:1px solid #cbd5e1;padding:10px">FFT (БПФ)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="color:#1e40af;font-size:19px;margin-top:28px">3. Физический смысл коэффициентов Чебышёва: «сплюснутая» волна</h2>
+  <p>
+    Гармоники Фурье имеют прозрачный физический смысл — это амплитуды колебаний на разных частотах. Но полиномы Чебышёва — это <strong>те же самые косинусы Фурье</strong>, только для проекции кругового движения на диаметр.
+  </p>
+  <p>
+    Если пустить точку по окружности с равномерной угловой скоростью φ, её проекция на ось <em>X</em> движется как поршень: <code>x = cos(φ)</code>. После такой замены полином Чебышёва превращается в обычный косинус: <code>T<sub>k</sub>(cos(φ)) = cos(kφ)</code>.
+  </p>
+  <ul style="padding-left:20px">
+    <li style="margin-bottom:6px"><strong>c<sub>0</sub></strong> — постоянная составляющая (средний уровень вдоль дуги).</li>
+    <li style="margin-bottom:6px"><strong>c<sub>1</sub></strong> — линейный наклон (общий перепад от левого края к правому).</li>
+    <li style="margin-bottom:6px"><strong>c<sub>2</sub></strong> — параболическая кривизна (прогиб или выпуклость).</li>
+    <li style="margin-bottom:6px"><strong>c<sub>k</sub> (высокие порядки)</strong> — амплитуда пространственной ряби на масштабе порядка <em>1/k</em>.</li>
+  </ul>
+  <p>
+    <strong>Зачем они нужны при наличии Фурье?</strong> При попытке разложить линейную функцию <em>f(x) = x</em> на отрезке напрямую в ряд Фурье на стыке возникает разрыв (ступенька) и <em>эффект Гиббса</em> — ошибка убывает медленно, как <em>1/k</em>. Полином Чебышёва даёт <em>f(x) = x</em> с нулевой ошибкой уже на первом шаге (<code>T<sub>1</sub>(x) = x</code>), а гладкую экспоненту <em>e<sup>x</sup></em> приближает с машинной точностью (10<sup>-16</sup>) всего за 10–12 коэффициентов.
+  </p>
+
+  <h2 style="color:#1e40af;font-size:19px;margin-top:28px">4. Как «обдурить» ошибку и замкнуть непериодическую кривую</h2>
+  <p>
+    Если данные имеют тренд (линейный или экспоненциальный), при прямой склейке конца с началом появится скачок. Идея добавить пустой зазор <code>[L, L + Δ]</code> между последним и первым отсчётами, чтобы плавно замкнуть функцию, в современной вычислительной физике называется <strong>Fourier Continuation (Фурье-продолжение)</strong>.
+  </p>
+  <p style="background-color:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:4px">
+    <strong>Математический подвох:</strong> если оставить зазор пустым без ограничений, МНК может устроить в нём гигантский выброс, чтобы идеально подогнать точки на рабочем участке.
+  </p>
+  <p>Чтобы закрыть зазор корректно, применяют три приёма:</p>
+  <ol style="padding-left:20px">
+    <li style="margin-bottom:8px">
+      <strong>Гладкий мост (Smooth Bridge):</strong> заполнить зазор виртуальными точками (сплайном или полиномом Эрмита) так, чтобы на стыках совпали значения, первая и вторая производные.
+    </li>
+    <li style="margin-bottom:8px">
+      <strong>Регуляризация Тихонова:</strong> добавить в МНК штраф за энергию высоких частот (<code>λ Σ m<sup>4</sup>(a<sub>m</sub><sup>2</sup> + b<sub>m</sub><sup>2</sup>)</code>), заставляя кривую вести себя в зазоре как упругая линейка.
+    </li>
+    <li style="margin-bottom:8px">
+      <strong>Вычитание тренда (Detrending):</strong> вычесть прямую или параболу через концы отрезка, обнулить границы и разложить остаток в нечётный синус-ряд.
+    </li>
+  </ol>
+
+  <h2 style="color:#1e40af;font-size:19px;margin-top:28px">5. Историческая справка: Париж, простые числа и паровой котёл</h2>
+  <p>
+    В мировой литературе полиномы носят имя автора — <strong>Chebyshev polynomials</strong> (в старых работах и радиотехнических фильтрах встречаются также французская и немецкая транслитерации <em>Tchebycheff</em> и <em>Tschebyschow</em>, от первой буквы которой пошло обозначение <code>T<sub>n</sub>(x)</code>).
+  </p>
+  <p>
+    Пафнутий Львович Чебышёв был признан классиком мировой науки за полвека до советской математической школы: в 29 лет он доказал постулат Бертрана о распределении простых чисел, в 1874 году стал первым русским учёным после Петра I, избранным иностранным членом Парижской академии наук, а сами полиномы открыл из суровой инженерной практики — пытаясь с помощью шарнирных механизмов превратить вращательное движение в паровом котле Уатта в максимально прямолинейное.
+  </p>
+
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0 16px 0">
+  <p style="color:#6b7280;font-size:14px">
+    С уважением,<br>
+    <strong>Aleksey Kurmanov</strong>
+  </p>
+</div>
+</body>
+</html>
