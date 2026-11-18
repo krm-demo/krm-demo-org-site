@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 rm -rf dist
 cp -R site dist
 
-# Build information read by site/build-info.js and shown in the page footer.
+# Build information read by site/build-site-info.js and shown in the page footer.
 jq -n \
   --arg target      "$TARGET" \
   --arg repo        "${GITHUB_REPOSITORY:-}" \

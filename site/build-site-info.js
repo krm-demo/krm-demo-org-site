@@ -1,4 +1,4 @@
-// Shows which build of the site is being served, e.g.
+// build-site-info.js — shows which build of the site is being served, e.g.
 //   "<GitHub mark> build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago"
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
@@ -104,7 +104,30 @@
       });
   }
 
+  // Re-check build-site.json about once a minute to notice a newer deploy.
+  // Each wait gets a little random jitter so open pages don't all poll at the same moment.
+  // While the tab is hidden (background tab, locked phone) nothing is polled; on return it checks at once.
+  var POLL_MS = 60 * 1000, JITTER_MS = 10 * 1000;
+  var pollTimer = null;
+
+  function schedule() {
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(poll, POLL_MS + Math.random() * JITTER_MS);
+  }
+
+  function poll() {
+    if (document.hidden) return;   // resumed by the visibilitychange handler
+    load();
+    schedule();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { clearTimeout(pollTimer); return; }
+    tick();
+    poll();
+  });
+
   load();
+  schedule();
   setInterval(tick, 30 * 1000);   // keep "x minutes ago" current
-  setInterval(load, 60 * 1000);   // notice a newer deploy
 })();

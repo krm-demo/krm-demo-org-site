@@ -22,12 +22,14 @@ Sources of https://krm-demo.org.
 ## Build info in the footer
 
 Every build writes `build-site.json` (build number, tag/branch, commit, workflow run, time, target).
-`site/build-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
+`site/build-site-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
 `Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`. Links: build number and "deployed … ago" → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact date.
-While the page stays open it re-checks `build-site.json` every minute and shows "new version deployed — reload".
+While the page stays open it re-checks `build-site.json` about every minute (60–70 s, jittered) and shows "new version deployed — reload".
+It doesn't poll while the tab is hidden, and checks at once when the tab becomes visible again.
+The release uploads `build-site.json` with `Cache-Control: max-age=10` (other files: 300 s), so CloudFront never hides a new version for long.
 Served locally without a build, it shows "Local preview (no build info)".
 
-To get it on another page: add the span and `<script src="build-info.js"></script>`
+To get it on another page: add the span and `<script src="build-site-info.js"></script>`
 (relative path — so not on the error page, which is served from arbitrary URLs).
 
 ## Everyday workflow
