@@ -1,6 +1,6 @@
-# From Least Squares to Fourier Continuation: how to flatten a circle, outwit the Gibbs phenomenon, and what a 19th-century steam engine has to do with it
+# Chebyshev polynomials: cosines in disguise
 
-*Notes from a conversation about fitting data optimally on an interval and on a circle. Statements come with proofs; click "Proof" to expand them. Numbers marked "computed" were checked in NumPy/SciPy.*
+*How to flatten a circle, outwit the Gibbs phenomenon, and what a 19th-century steam engine has to do with it. Notes from a conversation about fitting data optimally on an interval and on a circle. Statements come with proofs; click "Proof" to expand them. Numbers marked "computed" were checked in NumPy/SciPy.*
 
 **The short version.** On an interval, fit with Chebyshev polynomials and, if you can choose where to sample, sample at Chebyshev points: the fit is then a fast cosine transform away. On a circle, use sines and cosines on an equally spaced grid: the fit is an FFT. The two are the same thing seen from different angles. Substitute $x = \cos\varphi$ and every Chebyshev polynomial becomes a cosine. Data with a trend is not periodic. To fit it with Fourier anyway, first make it periodic: bridge the gap smoothly, penalise curvature, or subtract the trend.
 

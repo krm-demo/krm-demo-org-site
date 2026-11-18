@@ -1,4 +1,4 @@
-# How krm-demo.org notices a new version — and how it could get faster
+# Are we there yet? How this site notices a new version
 
 *As of 2026-11-18. Production behaves as described here from release v0.3.0 on.*
 

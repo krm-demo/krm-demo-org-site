@@ -135,14 +135,14 @@ code, pre, kbd { font-family: var(--font-mono); }
 /* ---------- header ---------- */
 
 .site-head { background: var(--head-bg); color: var(--head-ink); border-bottom: 1px solid var(--head-rule); }
-.site-head .wrap { display: flex; align-items: center; gap: 0.75rem 1.25rem; flex-wrap: wrap; padding-top: 0.7rem; padding-bottom: 0.7rem; }
-.brand { font-family: var(--font-head); font-weight: var(--head-weight); font-size: 1.5rem; color: inherit; letter-spacing: 0.01em; }
+.site-head .wrap { display: flex; align-items: center; gap: 1.25rem; padding-top: 0.7rem; padding-bottom: 0.7rem; }   /* always one row */
+.brand { font-family: var(--font-head); font-weight: var(--head-weight); font-size: 1.5rem; color: inherit; letter-spacing: 0.01em; white-space: nowrap; }
 .brand:hover { color: inherit; opacity: 0.8; }
-.brand-section { font-style: italic; opacity: 0.85; }
+.brand-section { font-style: italic; opacity: 0.85; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand-section::before { content: "/"; margin-right: 0.6rem; font-style: normal; opacity: 0.5; }
 
 /* Skin switcher (built by site.js): one swatch per skin, the current one shows its name. */
-.skin-switch { margin-left: auto; display: flex; align-items: center; gap: 0.35rem; }
+.skin-switch { margin-left: auto; flex: none; display: flex; align-items: center; gap: 0.35rem; }
 .skin-switch button {
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.2rem; border: 1px solid transparent; border-radius: 999px;
@@ -161,6 +161,24 @@ html[data-skin="scientific"] .site-head { border-bottom: 3px double var(--head-r
 html[data-skin="scientific"] .brand { font-variant: small-caps; letter-spacing: 0.04em; }
 html[data-skin="pulp"] .site-head { border-bottom: 4px solid var(--head-rule); }
 html[data-skin="pulp"] .brand { font-size: 1.9rem; text-transform: uppercase; letter-spacing: 0.02em; }
+
+/* Phones: smaller name, swatches without the skin's name, tighter spacing. */
+@media (max-width: 40rem) {
+    .wrap { padding: 0 1rem; }
+    .site-head .wrap { gap: 0.6rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .brand, html[data-skin="pulp"] .brand { font-size: 1.25rem; }
+    .brand-section { font-size: 0.875rem; }
+    .brand-section::before { margin-right: 0.35rem; }
+    .skin-switch { gap: 0.1rem; }
+    .skin-switch button, .skin-switch button[aria-checked="true"] { padding: 0.15rem; }
+    .skin-switch button[aria-checked="true"] .skin-name { display: none; }
+    .skin-switch .swatch { width: 1.05rem; height: 1.05rem; }
+}
+
+/* Very wide monitors: everything a little larger, so the page does not look lost. */
+@media (min-width: 110rem) {
+    html { font-size: 112.5%; }
+}
 
 /* ---------- footer ---------- */
 
@@ -246,8 +264,9 @@ a.lang-badge:hover, .lang-badge.active { background: var(--link); color: var(--b
 article { min-width: 0; }
 
 .article-nav { margin: 0 0 1.75rem; font-size: 0.875rem; color: var(--ink-soft); }
+.lang-switch { display: inline-block; white-space: nowrap; }   /* the badges never part from their label */
 
-article h1 { font-size: clamp(1.6rem, 3.4vw, 2.15rem); margin: 0 0 1.25rem; letter-spacing: -0.01em; }   /* titles here are long */
+article h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin: 0 0 1rem; letter-spacing: -0.01em; }
 article h2 { font-size: 1.6rem; margin: 2.75rem 0 0.9rem; }
 article h3 { font-size: 1.25rem; margin: 2rem 0 0.6rem; }
 article h1 + p { color: var(--ink-soft); }            /* the italic note under the title */
@@ -269,7 +288,7 @@ article :is(h2, h3):target { animation: target-flash 2.5s ease-out 1; }
 }
 
 html[data-skin="scientific"] article p, html[data-skin="scientific"] article li { text-align: justify; hyphens: auto; }
-html[data-skin="pulp"] article h1 { text-transform: uppercase; font-size: clamp(1.7rem, 3.8vw, 2.4rem); line-height: 1.1; }
+html[data-skin="pulp"] article h1 { text-transform: uppercase; font-size: clamp(1.9rem, 4.6vw, 2.9rem); line-height: 1.05; }
 html[data-skin="pulp"] article h2 { color: var(--accent); font-size: 1.9rem; }
 html[data-skin="pulp"] article h3 { font-size: 1.45rem; }
 
@@ -283,12 +302,19 @@ html[data-skin="pulp"] article h3 { font-size: 1.45rem; }
 .toc a:hover { color: var(--link); }
 .toc .katex { font-size: 1em; }
 
+/* The collapsed copy inside the article, after the title: shown instead of the side column on narrow screens. */
+article .toc-inline { display: none; margin: 0 0 1.5rem; font-size: 0.875rem; line-height: 1.4; }
+article .toc-inline summary { font-style: normal; font-weight: 700; }
+article .toc-inline ol { list-style: none; margin: 0; padding: 0; }
+article .toc-inline ol ol { padding-left: 0.9rem; }
+article .toc-inline li { margin: 0.4rem 0; }
+article .toc-inline .katex { font-size: 1em; }
+
 @media (max-width: 62rem) {
-    .article-layout { grid-template-columns: minmax(0, var(--measure)); }
-    .toc { position: static; max-height: none; grid-column: 1; grid-row: auto; margin: 0 0 1.5rem; padding: 0.6rem 1rem; background: var(--surface); border-radius: 0.4rem; }
-    .toc summary { margin-bottom: 0; }
-    .toc details[open] summary { margin-bottom: 0.5rem; }
-    article { grid-row: 2; }
+    .article-layout { grid-template-columns: minmax(0, var(--measure)); padding-top: 1rem; }
+    .toc { display: none; }
+    article .toc-inline { display: block; }
+    .article-nav { margin-bottom: 1rem; }
 }
 
 /* Tables: rules above, below and under the header; wide ones scroll sideways. */
@@ -337,7 +363,7 @@ article figure svg { display: block; width: 100%; height: auto; max-width: 40rem
 article figure + p { margin-bottom: 1.75rem; font-size: 0.875em; line-height: 1.5; color: var(--ink-soft); text-align: left; }
 
 @media print {
-    .skin-switch, .toc, .site-foot, .article-nav, .new-version { display: none; }
+    .skin-switch, .toc, .toc-inline, .site-foot, .article-nav, .new-version { display: none; }
     .article-layout { display: block; }
     article details { border: 0; background: none; padding: 0; }
 }

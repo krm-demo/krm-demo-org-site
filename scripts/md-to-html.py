@@ -233,10 +233,13 @@ def main(src, dst):
                 items.append(f'<a class="lang-badge" href="{name}.{code}.html" hreflang="{code}" lang="{code}" '
                              f'title="{full}">{label}</a>')
             alternates += f'    <link rel="alternate" hreflang="{code}" href="{name}.{code}.html">\n'
-        switcher = f'· {ui["versions"]} {"".join(items)}'
+        switcher = f'<span class="lang-switch">· {ui["versions"]} {"".join(items)}</span>'
 
     toc_html = ""
     if toc:
+        # Narrow screens show this collapsed copy, placed after the title and its note; wide screens show the side column.
+        inline = f'<details class="toc-inline"><summary>{ui["contents"]}</summary>{toc}</details>'
+        body = re.sub(r'(<h1>.*?</h1>\s*<p>.*?</p>)', lambda m: m.group(1) + '\n' + inline, body, count=1, flags=re.S)
         toc_html = (f'    <nav class="toc" aria-label="{ui["contents"]}">\n'
                     f'        <details open><summary>{ui["contents"]}</summary>{toc}</details>\n    </nav>\n')
 

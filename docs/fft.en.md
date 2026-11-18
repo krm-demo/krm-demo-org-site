@@ -1,6 +1,6 @@
-# The discrete and the fast Fourier transform: a trillion operations that became twenty million, the cosine inside every JPEG, and the bell curve the transform cannot change
+# DFT and FFT: Fourier for people in a hurry
 
-*The second note in a series that began with [Chebyshev polynomials](chebyshev.en.md). Statements come with proofs; click "Proof" to expand them. Every listing was run (Python with NumPy and SciPy, TypeScript on Node 22, Java), and the output shown under it is what it printed.*
+*How a trillion operations became twenty million, which cosine sits inside every JPEG, and the one shape the transform cannot change. The second note in a series that began with [Chebyshev polynomials](chebyshev.en.md). Statements come with proofs; click "Proof" to expand them. Every listing was run (Python with NumPy and SciPy, TypeScript on Node 22, Java), and the output shown under it is what it printed.*
 
 **The short version.** The discrete Fourier transform (DFT) turns $N$ samples of a signal into $N$ numbers that say how much of each frequency the signal contains. Computed from its definition it costs $N^2$ operations. The fast Fourier transform (FFT) produces the same numbers in about $N\log_2 N$, by cutting the problem in half again and again. Mirror the signal before transforming it and you get the cosine transform inside JPEG and MP3. And one shape, the bell curve, comes out of the transform exactly as it went in.
 

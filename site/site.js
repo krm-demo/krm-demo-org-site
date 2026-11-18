@@ -84,10 +84,6 @@
     for (var j = 0; j < titles.length; j++) {
       if (prefersRu) titles[j].href = titles[j].getAttribute('data-ru');
     }
-
-    // Narrow screens: the contents block starts closed.
-    var toc = document.querySelector('.toc details');
-    if (toc && window.matchMedia && window.matchMedia('(max-width: 62rem)').matches) toc.removeAttribute('open');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
