@@ -26,7 +26,7 @@ jq -n \
   --arg built_at    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{target:$target, repo:$repo, ref:$ref, sha:$sha, workflow:$workflow,
     run_id:$run_id, run_number:$run_number, run_attempt:$run_attempt, built_at:$built_at}' \
-  > dist/build.json
+  > dist/build-site.json
 
 # GitHub Pages only uses a custom error page named 404.html (S3 is configured to use error.html).
 if [ "$TARGET" = "gh-pages" ] && [ -f dist/error.html ]; then
@@ -34,5 +34,5 @@ if [ "$TARGET" = "gh-pages" ] && [ -f dist/error.html ]; then
 fi
 
 echo "Built dist/ for target '$TARGET':"
-cat dist/build.json
+cat dist/build-site.json
 ls -la dist

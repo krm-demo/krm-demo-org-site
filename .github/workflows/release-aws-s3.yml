@@ -62,5 +62,5 @@ jobs:
         run: |
           curl -fsS "${SITE_URL}" -o /tmp/index.html
           cmp /tmp/index.html dist/index.html && echo "Live index.html matches the build."
-          curl -fsS "${SITE_URL}build.json" | jq -e --arg sha "$GITHUB_SHA" '.sha == $sha' \
-            && echo "Live build.json is this build."
+          curl -fsS "${SITE_URL}build-site.json" | jq -e --arg sha "$GITHUB_SHA" '.sha == $sha' \
+            && echo "Live build-site.json is this build."

@@ -4,9 +4,6 @@ name: Check krm-demo.org (HTTPS via CloudFront)
 # so it works independently of DNS. Run it from the Actions tab whenever something looks wrong.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/check-site.yml']
 
 permissions:
   contents: read
@@ -52,10 +49,10 @@ jobs:
             if [ $ok = 1 ]; then echo "OK    $name: $code $loc"; else echo "FAIL  $name: got $code $loc (want $want $extra)"; fail=1; fi
           }
           check "home page"           200 "https://${SITE}/"               'id="build-info"'
-          check "build.json"          200 "https://${SITE}/build.json"     '"sha"'
+          check "build-site.json"     200 "https://${SITE}/build-site.json"     '"sha"'
           check "error page"          404 "https://${SITE}/no-such-page"   'krm-demo (error)'
           check "http -> https"       301 "http://${SITE}/"                "https://${SITE}/"
           check "www -> apex"         301 "https://www.${SITE}/a?b=1"      "https://${SITE}/a?b=1"
           check "http www -> https"   301 "http://www.${SITE}/"            "https://www.${SITE}/"
-          echo "--- build.json"; curl -sS $(via "$SITE") "https://${SITE}/build.json"; echo
+          echo "--- build-site.json"; curl -sS $(via "$SITE") "https://${SITE}/build-site.json"; echo
           exit $fail

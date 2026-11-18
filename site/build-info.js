@@ -1,6 +1,6 @@
 // Shows which build of the site is being served, e.g.
 //   "<GitHub mark> build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago"
-// Data comes from build.json, written by scripts/build.sh during the GitHub Actions build.
+// Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
 (function () {
   var el = document.getElementById('build-info');
@@ -84,7 +84,7 @@
   }
 
   function load() {
-    fetch('build.json', { cache: 'no-store' })
+    fetch('build-site.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (b) {
         var key = [b.sha, b.run_id, b.run_attempt, b.built_at].join('|');

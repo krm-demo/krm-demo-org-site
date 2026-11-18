@@ -14,17 +14,17 @@ Sources of https://krm-demo.org.
 ## Layout
 
 - `site/` — the pages that get published. Only files under `site/` are deployed.
-- `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build.json`.
+- `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/` and writes `dist/build-site.json`.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.
 - `.github/workflows/check-site.yml` — manual check of HTTPS, redirects and pages through CloudFront (Actions → Run workflow).
 
 ## Build info in the footer
 
-Every build writes `build.json` (build number, tag/branch, commit, workflow run, time, target).
+Every build writes `build-site.json` (build number, tag/branch, commit, workflow run, time, target).
 `site/build-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
 `Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`. Links: build number and "deployed … ago" → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact date.
-While the page stays open it re-checks `build.json` every minute and shows "new version deployed — reload".
+While the page stays open it re-checks `build-site.json` every minute and shows "new version deployed — reload".
 Served locally without a build, it shows "Local preview (no build info)".
 
 To get it on another page: add the span and `<script src="build-info.js"></script>`
