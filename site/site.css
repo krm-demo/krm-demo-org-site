@@ -1,0 +1,42 @@
+/* Shared styles of the krm-demo pages. Load it after Bootstrap:
+ *   <link href="site.css" rel="stylesheet">
+ */
+
+/* Links: no permanent underline; they change colour on hover (and on keyboard focus) instead. */
+a {
+    text-decoration: none;
+}
+a:hover,
+a:focus-visible {
+    color: var(--bs-link-hover-color);
+    text-decoration: none;
+}
+
+/* Footer build line, filled by build-site-info.js */
+#build-info a.link-secondary:hover,
+#build-info a.link-secondary:focus-visible {
+    color: var(--bs-link-hover-color) !important;   /* Bootstrap's .link-secondary colour is !important */
+}
+.build-info-dim {              /* the words around the data: "published", "yesterday" */
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* Articles generated from docs/*.md by scripts/md-to-html.py */
+article {
+    max-width: 72rem;
+}
+article table {
+    font-size: 0.9rem;
+}
+article th {
+    white-space: nowrap;
+}
+article td:first-child {
+    font-weight: 600;
+}
+
+/* The bar of the fixed footer */
+.site-footer-bar {
+    background-color: rgba(0, 0, 0, 0.1);
+}

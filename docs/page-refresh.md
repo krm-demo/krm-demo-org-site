@@ -21,11 +21,12 @@ The page always asks for `build-site.json` with `cache: 'no-store'`, so the brow
 
 The footer is filled by `build-site-info.js` from `build-site.json`, which every build writes (build number, tag or branch, commit, workflow run, time, target).
 
-- **Production:** `v0.3.0 · published 2026-11-17 (Tue) 23:05 EST, 5 minutes ago`. Hovering the version shows the build number and commit.
-- **Staging:** `build #12 · main · 7422536 · gh-pages · published 2026-11-17 (Tue) 22:40 EST, 20 minutes ago`. The commit is shown because `main` alone doesn't say which change is live; for a version tag it is left out.
-- **Time** is in the visitor's time zone, in the format of `krm-demo/core-utils` (`yyyy-MM-dd (EEE) HH:mm`). Hover it for the exact UTC time.
+- **Production:** `v0.3.0 · published 2026-Nov-17 (Tue) 23:05 EST, 5 minutes ago`. Hovering the version shows the build number and commit.
+- **Staging:** `build #12 · main · 7422536 · gh-pages · published 2026-Nov-17 (Tue) 22:40 EST, 20 minutes ago`. The commit is shown because `main` alone doesn't say which change is live; for a version tag it is left out.
+- **Time** is in the visitor's time zone, in the format of `krm-demo/core-utils` (`yyyy-MM-dd (EEE) HH:mm`) but with a three-letter month: `2026-Nov-17 (Tue) 23:05`. The words around it ("published", "5 minutes ago") are dimmer and in italics. Hover it for the exact UTC time.
 - **"How long ago"** follows the calendar: `42 seconds ago`, `12 minutes ago`, `3 hours ago`, `yesterday`, `day before yesterday`, `this Thursday`, `last Wednesday`, `two weeks ago`, `last month`, `4 months ago`, `last year`.
 - **Never wraps:** six variants, from the full line down to `v0.3.0 · yesterday`. The longest one that fits is shown, and the choice is re-checked when the width changes.
+- **Links** have no underline; they change colour on hover. Shared styles are in `site.css`.
 - **New build:** when a newer build appears while the page is open, the footer adds "new version published — reload", shortened to `↻` on narrow screens.
 
 ## How it could get faster

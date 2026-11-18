@@ -1,13 +1,13 @@
 // build-site-info.js — shows which build of the site is being served and when it was published, e.g.
-//   krm-demo.org (aws-s3):  "v0.3.0 · published 2026-11-16 (Mon) 23:12 EST, yesterday"
-//   preview (gh-pages):     "<GitHub mark> build #12 · main · 4bc33a4 · gh-pages · published 2026-11-17 (Tue) 22:18 EST, 20 minutes ago"
+//   krm-demo.org (aws-s3):  "v0.3.0 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday"
+//   preview (gh-pages):     "<GitHub mark> build #12 · main · 4bc33a4 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago"
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
 //
 // The line never wraps: it is rendered in several variants, from the most verbose to the shortest,
 // and the first one that fits the available width is shown (re-checked when the width changes).
 // Dates are shown in the visitor's time zone in the "natural" format of krm-demo/core-utils
-// (CoreDateTimeUtils: "yyyy-MM-dd (EEE) HH:mm").
+// (CoreDateTimeUtils: "yyyy-MM-dd (EEE) HH:mm"), with the month as three letters: "2026-Nov-16 (Mon) 23:12".
 (function () {
   var el = document.getElementById('build-info');
   if (!el) return;
@@ -24,17 +24,18 @@
   // ---------- date formatting ----------
 
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var COUNT_WORDS = ['zero', 'one', 'two', 'three'];
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  // "2026-11-16 (Mon) 23:12" in the visitor's time zone
+  // "2026-Nov-16 (Mon) 23:12" in the visitor's time zone
   function natural(d) {
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+    return d.getFullYear() + '-' + MONTHS[d.getMonth()] + '-' + pad(d.getDate()) +
       ' (' + DAYS[d.getDay()].slice(0, 3) + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  // "11-16 (Mon) 23:12"
+  // "Nov-16 (Mon) 23:12"
   function naturalShort(d) {
     return natural(d).slice(5);
   }
@@ -101,6 +102,7 @@
 
   // ---------- DOM helpers ----------
 
+  // text: a string, or an array of strings and nodes (e.g. dim() parts)
   function link(text, href, title) {
     var n;
     if (href) {
@@ -110,9 +112,19 @@
     } else {
       n = document.createElement('span');
     }
-    n.textContent = text;
+    [].concat(text).forEach(function (t) {
+      n.appendChild(typeof t === 'string' ? document.createTextNode(t) : t);
+    });
     if (title) n.title = title;
     return n;
+  }
+
+  // Words around the data ("published", "yesterday") are shown dimmer and in italics (class in site.css).
+  function dim(text) {
+    var s = document.createElement('span');
+    s.className = 'build-info-dim';
+    s.textContent = text;
+    return s;
   }
 
   // The GitHub mark (Octicons "mark-github"), sized to the text and coloured like it.
@@ -167,7 +179,10 @@
     function when(text, href) { return hasDate ? link(text, href, tip) : null; }
 
     var full = hasDate ? natural(at) : '';
-    var published = 'published ' + full;
+    // [published] 2026-Nov-16 (Mon) 23:12 EST, [yesterday]
+    function stamp(withZone) {
+      return [dim('published'), ' ' + full + (withZone && zone ? ' ' + zone : '') + ', ', dim(rel)];
+    }
     var short = hasDate ? naturalShort(at) : '';
 
     // The public site (AWS S3 / krm-demo.org) shows only the version and when it was published.
@@ -175,18 +190,18 @@
     if (b.target === 'aws-s3') {
       var details = [runNo && 'build #' + runNo, b.sha && 'commit ' + b.sha.slice(0, 7)].filter(Boolean).join(' · ');
       return [
-        // v0.3.0 · published 2026-11-16 (Mon) 23:12 EST, yesterday · new version published — reload
-        [ref(details), when(published + (zone ? ' ' + zone : '') + ', ' + rel), newVersion && reloadLink('new version published — reload')],
-        // v0.3.0 · published 2026-11-16 (Mon) 23:12, yesterday · new version — reload
-        [ref(details), when(published + ', ' + rel), newVersion && reloadLink('new version — reload')],
-        // v0.3.0 · 2026-11-16 (Mon) 23:12 · yesterday · ↻ reload
-        [ref(details), when(full), when(rel), newVersion && reloadLink('↻ reload')],
-        // v0.3.0 · 11-16 (Mon) 23:12 · yesterday · ↻
-        [ref(details), when(short), when(rel), newVersion && reloadLink('↻')],
+        // v0.3.0 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday · new version published — reload
+        [ref(details), when(stamp(true)), newVersion && reloadLink('new version published — reload')],
+        // v0.3.0 · published 2026-Nov-16 (Mon) 23:12, yesterday · new version — reload
+        [ref(details), when(stamp(false)), newVersion && reloadLink('new version — reload')],
+        // v0.3.0 · 2026-Nov-16 (Mon) 23:12 · yesterday · ↻ reload
+        [ref(details), when(full), when([dim(rel)]), newVersion && reloadLink('↻ reload')],
+        // v0.3.0 · Nov-16 (Mon) 23:12 · yesterday · ↻
+        [ref(details), when(short), when([dim(rel)]), newVersion && reloadLink('↻')],
         // v0.3.0 · yesterday · ↻
-        [ref(details), when(rel), newVersion && reloadLink('↻')],
+        [ref(details), when([dim(rel)]), newVersion && reloadLink('↻')],
         // yesterday
-        [when(rel) || ref(details), newVersion && reloadLink('↻')]
+        [when([dim(rel)]) || ref(details), newVersion && reloadLink('↻')]
       ];
     }
 
@@ -195,19 +210,19 @@
     var isTag = /^v\d/.test(b.ref || '');
     function commit() { return isTag ? null : sha(); }
     var v = [
-      // build #12 · main · 4bc33a4 · gh-pages · published 2026-11-17 (Tue) 22:18 EST, 20 minutes ago · new version published — reload
-      [run(true), ref(), commit(), target(), when(published + (zone ? ' ' + zone : '') + ', ' + rel, runUrl),
+      // build #12 · main · 4bc33a4 · gh-pages · published 2026-Nov-17 (Tue) 22:18 EST, 20 minutes ago · new version published — reload
+      [run(true), ref(), commit(), target(), when(stamp(true), runUrl),
         newVersion && reloadLink('new version published — reload')],
-      // build #12 · main · 4bc33a4 · published 2026-11-17 (Tue) 22:18, 20 minutes ago · new version — reload
-      [run(true), ref(), commit(), when(published + ', ' + rel, runUrl), newVersion && reloadLink('new version — reload')],
-      // #12 · main · 4bc33a4 · 2026-11-17 (Tue) 22:18 · 20 minutes ago · ↻ reload
-      [run(false), ref(), commit(), when(full, runUrl), when(rel, runUrl), newVersion && reloadLink('↻ reload')],
-      // #12 · 4bc33a4 · 11-17 (Tue) 22:18 · 20 minutes ago · ↻
-      [run(false), commit() || ref(), when(short, runUrl), when(rel, runUrl), newVersion && reloadLink('↻')],
+      // build #12 · main · 4bc33a4 · published 2026-Nov-17 (Tue) 22:18, 20 minutes ago · new version — reload
+      [run(true), ref(), commit(), when(stamp(false), runUrl), newVersion && reloadLink('new version — reload')],
+      // #12 · main · 4bc33a4 · 2026-Nov-17 (Tue) 22:18 · 20 minutes ago · ↻ reload
+      [run(false), ref(), commit(), when(full, runUrl), when([dim(rel)], runUrl), newVersion && reloadLink('↻ reload')],
+      // #12 · 4bc33a4 · Nov-17 (Tue) 22:18 · 20 minutes ago · ↻
+      [run(false), commit() || ref(), when(short, runUrl), when([dim(rel)], runUrl), newVersion && reloadLink('↻')],
       // 4bc33a4 · 20 minutes ago · ↻
-      [commit() || ref(), when(rel, runUrl), newVersion && reloadLink('↻')],
+      [commit() || ref(), when([dim(rel)], runUrl), newVersion && reloadLink('↻')],
       // 20 minutes ago
-      [when(rel, runUrl) || ref(), newVersion && reloadLink('↻')]
+      [when([dim(rel)], runUrl) || ref(), newVersion && reloadLink('↻')]
     ];
     return v;
   }
