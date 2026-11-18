@@ -23,8 +23,15 @@ Sources of https://krm-demo.org.
 
 Every build writes `build-site.json` (build number, tag/branch, commit, workflow run, time, target).
 `site/build-site-info.js` reads it and fills `<span id="build-info"></span>` in the footer, e.g.
-`Build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago`. Links: build number and "deployed … ago" → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact date.
-While the page stays open it re-checks `build-site.json` about every minute (60–70 s, jittered) and shows "new version deployed — reload".
+`build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday`.
+Links: build number and the publish time → the workflow run; tag/branch → the repo at that tag; hash → the commit. Hover the time for the exact UTC time.
+
+- The time is in the visitor's time zone, in the "natural" format of `krm-demo/core-utils` (`yyyy-MM-dd (EEE) HH:mm`).
+- "How long ago" follows the calendar: `42 seconds ago`, `12 minutes ago`, `3 hours ago`, `yesterday`, `day before yesterday`,
+  `this Thursday`, `last Wednesday`, `two weeks ago`, `last month`, `4 months ago`, `last year`, `3 years ago`.
+- The line never wraps. It has six variants, from the full line down to `v0.2.0 · yesterday`. The longest one that fits the width is shown, and the choice is re-checked when the width changes.
+
+While the page stays open it re-checks `build-site.json` about every minute (60–70 s, jittered) and adds "new version published — reload" (shortened to `↻` on narrow screens).
 It doesn't poll while the tab is hidden, and checks at once when the tab becomes visible again.
 The release uploads `build-site.json` with `Cache-Control: max-age=10` (other files: 300 s), so CloudFront never hides a new version for long.
 Served locally without a build, it shows "Local preview (no build info)".

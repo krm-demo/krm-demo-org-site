@@ -1,21 +1,117 @@
-// build-site-info.js — shows which build of the site is being served, e.g.
-//   "<GitHub mark> build #7 · v0.2.0 · a10737a · aws-s3 · deployed 3 minutes ago"
+// build-site-info.js — shows which build of the site is being served and when it was published, e.g.
+//   "<GitHub mark> build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday"
 // Data comes from build-site.json, written by scripts/build.sh during the GitHub Actions build.
 // Put <span id="build-info"></span> anywhere in a page and include this script.
+//
+// The line never wraps: it is rendered in several variants, from the most verbose to the shortest,
+// and the first one that fits the available width is shown (re-checked when the width changes).
+// Dates are shown in the visitor's time zone in the "natural" format of krm-demo/core-utils
+// (CoreDateTimeUtils: "yyyy-MM-dd (EEE) HH:mm").
 (function () {
   var el = document.getElementById('build-info');
   if (!el) return;
+  el.style.display = 'block';
+  el.style.whiteSpace = 'nowrap';
+  el.style.overflow = 'hidden';
+  el.style.textOverflow = 'ellipsis';   // last resort if even the shortest variant is too wide
 
+  var build = null;        // the build shown on the page (first build-site.json loaded)
   var shownKey = null;
-  var builtAt = null;
-  var ageEl = null;
+  var newVersion = false;  // a newer build was published while the page was open
+  var noInfo = null;       // text shown when build-site.json can't be loaded
 
-  function link(text, href) {
-    if (!href) { var s = document.createElement('span'); s.textContent = text; return s; }
-    var a = document.createElement('a');
-    a.href = href; a.textContent = text; a.target = '_blank'; a.rel = 'noopener';
-    a.className = 'link-secondary';
-    return a;
+  // ---------- date formatting ----------
+
+  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var COUNT_WORDS = ['zero', 'one', 'two', 'three'];
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  // "2026-11-16 (Mon) 23:12" in the visitor's time zone
+  function natural(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      ' (' + DAYS[d.getDay()].slice(0, 3) + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // "11-16 (Mon) 23:12"
+  function naturalShort(d) {
+    return natural(d).slice(5);
+  }
+
+  // "EST", "CET", or "GMT+2" when the browser has no abbreviation for the zone
+  function zoneName(d) {
+    try {
+      var parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).formatToParts(d);
+      for (var i = 0; i < parts.length; i++) if (parts[i].type === 'timeZoneName') return parts[i].value;
+    } catch (e) { /* old browser */ }
+    return '';
+  }
+
+  function plural(n, unit) { return n + ' ' + unit + (n === 1 ? '' : 's'); }
+
+  function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  // Calendar days between two dates (DST-safe: rounds the 23/25-hour days)
+  function dayDiff(from, to) { return Math.round((midnight(to) - midnight(from)) / 86400000); }
+
+  // Monday of the date's week (weeks start on Monday, as in ISO-8601)
+  function weekStart(d) {
+    var m = midnight(d);
+    m.setDate(m.getDate() - (m.getDay() + 6) % 7);
+    return m;
+  }
+
+  // How long ago, in words that follow the calendar rather than a stopwatch:
+  // "5 seconds ago", "12 minutes ago", "3 hours ago", "yesterday", "day before yesterday",
+  // "this Monday", "last Wednesday", "two weeks ago", "this month", "last month", "4 months ago",
+  // "last year", "3 years ago".
+  function relative(d, now) {
+    var sec = Math.floor((now - d) / 1000);
+    if (sec < 5) return 'just now';             // also covers a slightly fast build clock
+    if (sec < 60) return plural(sec, 'second') + ' ago';
+    if (sec < 3600) return plural(Math.floor(sec / 60), 'minute') + ' ago';
+
+    var days = dayDiff(d, now);
+    if (days === 0 || sec < 6 * 3600) return plural(Math.floor(sec / 3600), 'hour') + ' ago';
+    if (days === 1) return 'yesterday';
+    if (days === 2) return 'day before yesterday';
+
+    var weeks = Math.round((weekStart(now) - weekStart(d)) / (7 * 86400000));
+    if (weeks === 0) return 'this ' + DAYS[d.getDay()];
+    if (weeks === 1) return 'last ' + DAYS[d.getDay()];
+    if (weeks <= 3) return COUNT_WORDS[weeks] + ' weeks ago';
+
+    var years = now.getFullYear() - d.getFullYear();
+    var months = years * 12 + now.getMonth() - d.getMonth();
+    if (months === 0) return 'this month';
+    if (months === 1) return 'last month';
+    if (years === 0) return months + ' months ago';
+    if (years === 1) return 'last year';
+    return years + ' years ago';
+  }
+
+  // When the relative text can next change, so the footer stays current without busy updates
+  function nextTickMs(d, now) {
+    var sec = (now - d) / 1000;
+    if (sec < 60) return 1000;
+    if (sec < 3600) return 15 * 1000;
+    return 60 * 1000;
+  }
+
+  // ---------- DOM helpers ----------
+
+  function link(text, href, title) {
+    var n;
+    if (href) {
+      n = document.createElement('a');
+      n.href = href; n.target = '_blank'; n.rel = 'noopener';
+      n.className = 'link-secondary';
+    } else {
+      n = document.createElement('span');
+    }
+    n.textContent = text;
+    if (title) n.title = title;
+    return n;
   }
 
   // The GitHub mark (Octicons "mark-github"), sized to the text and coloured like it.
@@ -36,75 +132,102 @@
     return svg;
   }
 
-  function ago(date) {
-    var sec = Math.round((date.getTime() - Date.now()) / 1000); // negative = past
-    var rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-    var units = [['year', 31536000], ['month', 2592000], ['day', 86400], ['hour', 3600], ['minute', 60]];
-    for (var i = 0; i < units.length; i++) {
-      if (Math.abs(sec) >= units[i][1]) return rtf.format(Math.round(sec / units[i][1]), units[i][0]);
-    }
-    return rtf.format(sec, 'second');
+  function reloadLink(text) {
+    var n = document.createElement('a');
+    n.href = ''; n.className = 'fw-bold';
+    n.textContent = text;
+    n.title = 'A newer build was published while this page was open';
+    return n;
   }
 
-  function render(b) {
+  // ---------- variants, from the most verbose to the shortest ----------
+
+  function variants(b, now) {
     var gh = b.repo ? 'https://github.com/' + b.repo : null;
     var runUrl = gh && b.run_id ? gh + '/actions/runs/' + b.run_id : null;
-    var parts = [];
-    // "<GitHub mark> build #7" -> the workflow run that built it
-    if (b.run_number) {
-      var run = link('build #' + b.run_number + (b.run_attempt > 1 ? '.' + b.run_attempt : ''), runUrl);
-      run.insertBefore(githubMark(), run.firstChild);
-      run.title = 'GitHub workflow run';
-      parts.push(run);
-    } else {
-      parts.push(link('Local build', null));
+    var at = new Date(b.built_at);
+    var hasDate = !isNaN(at);
+    var tip = hasDate
+      ? 'Published ' + at.toISOString().replace('.000', '') + ' (UTC)' + (b.workflow ? ' by "' + b.workflow + '"' : '')
+      : '';
+    var rel = hasDate ? relative(at, now) : '';
+    var zone = hasDate ? zoneName(at) : '';
+    var runNo = b.run_number ? b.run_number + (b.run_attempt > 1 ? '.' + b.run_attempt : '') : '';
+
+    function run(long) {
+      if (!runNo) return link('Local build', null);
+      var r = link((long ? 'build #' : '#') + runNo, runUrl, 'GitHub workflow run');
+      r.insertBefore(githubMark(), r.firstChild);
+      return r;
     }
-    // "v0.2.0"/"main" -> the repository at that tag or branch
-    if (b.ref) parts.push(link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null));
-    // "a10737a"      -> the commit
-    if (b.sha) parts.push(link(b.sha.slice(0, 7), gh ? gh + '/commit/' + b.sha : null));
-    if (b.target) parts.push(link(b.target, null));
+    function ref() { return b.ref ? link(b.ref, gh ? gh + '/tree/' + encodeURI(b.ref) : null) : null; }
+    function sha() { return b.sha ? link(b.sha.slice(0, 7), gh ? gh + '/commit/' + b.sha : null) : null; }
+    function target() { return b.target ? link(b.target, null) : null; }
+    function when(text) { return hasDate ? link(text, runUrl, tip) : null; }
 
-    // "deployed 3 minutes ago" -> the workflow run as well; exact time on hover
-    builtAt = new Date(b.built_at);
-    ageEl = link('', runUrl);
-    ageEl.title = 'Built ' + builtAt.toLocaleString() + (b.workflow ? ' by "' + b.workflow + '"' : '');
-    parts.push(ageEl);
+    var full = hasDate ? natural(at) : '';
+    var v = [
+      // build #7 · v0.2.0 · a10737a · aws-s3 · published 2026-11-16 (Mon) 23:12 EST, yesterday · new version published — reload
+      [run(true), ref(), sha(), target(), when('published ' + full + (zone ? ' ' + zone : '') + ', ' + rel),
+        newVersion && reloadLink('new version published — reload')],
+      // build #7 · v0.2.0 · a10737a · published 2026-11-16 (Mon) 23:12, yesterday · new version — reload
+      [run(true), ref(), sha(), when('published ' + full + ', ' + rel), newVersion && reloadLink('new version — reload')],
+      // #7 · v0.2.0 · a10737a · 2026-11-16 (Mon) 23:12 · yesterday · ↻ reload
+      [run(false), ref(), sha(), when(full), when(rel), newVersion && reloadLink('↻ reload')],
+      // #7 · v0.2.0 · 11-16 (Mon) 23:12 · yesterday · ↻
+      [run(false), ref(), when(hasDate ? naturalShort(at) : ''), when(rel), newVersion && reloadLink('↻')],
+      // v0.2.0 · yesterday · ↻
+      [ref(), when(rel), newVersion && reloadLink('↻')],
+      // yesterday
+      [when(rel) || ref(), newVersion && reloadLink('↻')]
+    ];
+    return v;
+  }
 
+  function fill(parts) {
     el.textContent = '';
-    parts.forEach(function (p, i) {
-      if (i) el.appendChild(document.createTextNode(' · '));
+    var first = true;
+    parts.forEach(function (p) {
+      if (!p) return;
+      if (!first) el.appendChild(document.createTextNode(' · '));
       el.appendChild(p);
+      first = false;
     });
-    tick();
   }
 
-  function tick() {
-    if (ageEl && builtAt && !isNaN(builtAt)) ageEl.textContent = 'deployed ' + ago(builtAt);
+  function fits() { return el.scrollWidth <= el.clientWidth + 1; }
+
+  var tickTimer = null;
+
+  function render() {
+    clearTimeout(tickTimer);
+    if (!build) { if (noInfo) el.textContent = noInfo; return; }
+    var now = new Date();
+    var list = variants(build, now);
+    for (var i = 0; i < list.length; i++) {
+      fill(list[i]);
+      if (fits()) break;
+    }
+    var at = new Date(build.built_at);
+    if (!isNaN(at)) tickTimer = setTimeout(render, nextTickMs(at, now));   // keep "… ago" current
   }
+
+  // ---------- loading and polling ----------
 
   function load() {
     fetch('build-site.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (b) {
         var key = [b.sha, b.run_id, b.run_attempt, b.built_at].join('|');
-        if (shownKey === null) { shownKey = key; render(b); }
-        else if (key !== shownKey) {
-          // A newer build was deployed while this page was open.
-          if (!document.getElementById('build-info-new')) {
-            var n = document.createElement('a');
-            n.id = 'build-info-new'; n.href = ''; n.className = 'ms-2 fw-bold';
-            n.textContent = 'new version deployed — reload';
-            el.appendChild(n);
-          }
-        }
+        if (shownKey === null) { shownKey = key; build = b; render(); }
+        else if (key !== shownKey && !newVersion) { newVersion = true; render(); }
       })
       .catch(function () {
-        if (shownKey === null) el.textContent = 'Local preview (no build info)';
+        if (shownKey === null) { noInfo = 'Local preview (no build info)'; render(); }
       });
   }
 
-  // Re-check build-site.json about once a minute to notice a newer deploy.
+  // Re-check build-site.json about once a minute to notice a newer build.
   // Each wait gets a little random jitter so open pages don't all poll at the same moment.
   // While the tab is hidden (background tab, locked phone) nothing is polled; on return it checks at once.
   var POLL_MS = 60 * 1000, JITTER_MS = 10 * 1000;
@@ -123,11 +246,19 @@
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { clearTimeout(pollTimer); return; }
-    tick();
+    render();
     poll();
   });
 
+  // Pick the variant again whenever the available width changes (rotation, window resize).
+  var lastWidth = -1;
+  function onResize() {
+    var w = el.clientWidth;
+    if (w !== lastWidth) { lastWidth = w; render(); }
+  }
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(el);
+  else window.addEventListener('resize', onResize);
+
   load();
   schedule();
-  setInterval(tick, 30 * 1000);   // keep "x minutes ago" current
 })();
