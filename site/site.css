@@ -275,6 +275,8 @@ html[data-skin="scientific"] .home h2 { font-variant: small-caps; }
 /* A section with nothing to show (all chips off, or a search that finds nothing): the heading and its note fade. */
 .home section > h2, .home section > .section-note { transition: opacity 0.2s; }
 .home section.is-empty > h2, .home section.is-empty > .section-note { opacity: 0.3; }
+/* With every category switched off there is nothing to search in: the search box fades and is disabled. */
+.home.no-categories .search { opacity: 0.35; }
 .empty-note { margin: 1rem 0 0; color: var(--ink-soft); font-style: italic; }
 
 /* Category chips. Pressed = shown: lifted (light-to-tint gradient, faint shadow); not pressed = a soft outline.
@@ -313,9 +315,10 @@ html[data-skin="pulp"] .chip { border-width: 2px; text-transform: uppercase; let
 html[data-skin="pulp"] .chip-all { border-width: 2px; }
 
 /* The Collection: compact rows, a search box above them. */
-.search { margin: 0 0 1rem; }
+.search { position: relative; max-width: 28rem; margin: 0 0 1rem; transition: opacity 0.2s; }
+.search-icon { position: absolute; left: 0.8em; top: 50%; width: 1em; height: 1em; transform: translateY(-50%); color: var(--ink-soft); pointer-events: none; }
 .search input {
-    width: 100%; max-width: 28rem; padding: 0.55em 0.85em;
+    width: 100%; padding: 0.55em 0.85em 0.55em 2.4em; box-sizing: border-box;
     border: 1px solid var(--rule); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font: inherit;
 }
 .search input:focus { outline: 2px solid var(--link); outline-offset: 1px; }

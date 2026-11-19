@@ -40,6 +40,9 @@
     var cats = chosen();
     var count = chips.filter(on).length;
     all.setAttribute('aria-pressed', count === chips.length ? 'true' : count > 0 ? 'mixed' : 'false');
+    var home = document.querySelector('main.home');
+    if (home) home.classList.toggle('no-categories', count === 0);
+    if (search) search.disabled = count === 0;
 
     var words = (search && search.value || '').toLowerCase().split(/\s+/).filter(Boolean);
     [['#exhibition-list', false], ['#collection-list', true]].forEach(function (pair) {
