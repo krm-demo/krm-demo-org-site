@@ -272,6 +272,9 @@ html[data-skin="scientific"] .home h2 { font-variant: small-caps; }
 
 .home section + section { margin-top: 4rem; }
 [hidden] { display: none !important; }
+/* A section with nothing to show (all chips off, or a search that finds nothing): the heading and its note fade. */
+.home section > h2, .home section > .section-note { transition: opacity 0.2s; }
+.home section.is-empty > h2, .home section.is-empty > .section-note { opacity: 0.3; }
 .empty-note { margin: 1rem 0 0; color: var(--ink-soft); font-style: italic; }
 
 /* Category chips. Pressed = shown: lifted (light-to-tint gradient, faint shadow); not pressed = a soft outline.

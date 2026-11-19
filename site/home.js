@@ -57,6 +57,8 @@
       });
       var note = list.parentNode.querySelector('.empty-note');
       if (note) note.hidden = shown > 0;
+      // An empty section keeps its place, but its heading fades (see .is-empty in site.css).
+      list.parentNode.classList.toggle('is-empty', shown === 0);
     });
   }
 
