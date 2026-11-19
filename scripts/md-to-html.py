@@ -65,7 +65,7 @@ TEMPLATE = """<!DOCTYPE html>
 
 <header class="site-head">
     <div class="wrap">
-        <a class="brand" href="./">krm-demo</a>
+        <a class="brand" href="./" aria-label="krm-demo"><span class="wm-br" aria-hidden="true">[(</span><span class="wm-name" aria-hidden="true">krm-demo</span><span class="wm-br" aria-hidden="true">)]</span></a>
         <a class="brand-section" href="./#collection">{section}</a>
         <div id="lang-switch"></div>
         <div id="skin-switch"></div>

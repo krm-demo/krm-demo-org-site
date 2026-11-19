@@ -29,6 +29,9 @@ Sources of https://krm-demo.org.
   copies KaTeX's stylesheet and fonts to `dist/vendor/katex/`, and writes `dist/build-site.json`.
 - `scripts/build-home.py` — fills the home page (`<!-- build-home:… -->` markers in `site/index.html`) from the profiles
   and writes `dist/catalog.json` with all of them.
+- `site/fonts/` — JetBrains Mono (SIL Open Font License, `JetBrainsMono-OFL.txt`), extra bold and medium italic, cut down
+  to basic Latin (~11 KB each), for the wordmark `[(krm-demo)]` in the header. Its colours are `--wordmark-name` and
+  `--wordmark-bracket` in each skin of `site.css`.
 - `site/icons/`, `site/favicon.ico`, `site/manifest.json` — the site icon `[(-)]` in every skin and size (the size is in each file name).
   Drawn by `scripts/make-favicons.py` (needs `rsvg-convert` and ImageMagick; run by hand, results committed).
   `site.js` swaps the tab icon, the touch icon and `theme-color` (the phone's address bar) when the skin changes.
