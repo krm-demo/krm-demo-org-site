@@ -1,0 +1,29 @@
+{
+  "id": "visit-counter",
+  "kind": "article",
+  "category": "it",
+  "languages": [
+    "en"
+  ],
+  "title": {
+    "en": {
+      "full": "Who is reading this? Counting visits without a tracker",
+      "medium": "Counting visits",
+      "short": "Visits"
+    }
+  },
+  "summary": {
+    "en": "The network that serves these pages already counts every request. What that number means, what it hides, and how to turn it into an honest counter with no script and no cookie."
+  },
+  "icon": {
+    "large": "icons/visit-counter.svg",
+    "small": "icons/visit-counter.svg"
+  },
+  "createdAt": "2026-11-18T20:58:57-05:00",
+  "updatedAt": "2026-11-18T21:11:58-05:00",
+  "stats": {
+    "lastSeenAt": null,
+    "visitors": null,
+    "uniqueVisitors": null
+  }
+}

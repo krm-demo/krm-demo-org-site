@@ -140,6 +140,8 @@ code, pre, kbd { font-family: var(--font-mono); }
 .brand:hover { color: inherit; opacity: 0.8; }
 .brand-section { font-style: italic; opacity: 0.85; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand-section::before { content: "/"; margin-right: 0.6rem; font-style: normal; opacity: 0.5; }
+a.brand-section { color: inherit; text-decoration: none; }
+a.brand-section:hover { text-decoration: underline; }
 
 /* Skin switcher (built by site.js): one swatch per skin, the current one shows its name. */
 .skin-switch { margin-left: auto; flex: none; display: flex; align-items: center; gap: 0.35rem; }
@@ -231,14 +233,67 @@ html[data-skin="pulp"] .entry, html[data-skin="pulp"] .reading-list { border-col
 html[data-skin="pulp"] .entry h3 { font-size: 1.7rem; letter-spacing: 0.01em; }
 html[data-skin="scientific"] .home h2 { font-variant: small-caps; }
 
-.placeholders { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.25rem; margin-top: 3rem; }
-.placeholders > div { padding: 1rem 1.25rem; border: 1px dashed var(--rule); border-radius: 0.4rem; color: var(--ink-soft); }
-.placeholders h3 { margin: 0 0 0.25rem; font-size: 1.1rem; color: var(--ink); }
-.placeholders p { margin: 0; }
+.home section + section { margin-top: 4rem; }
+[hidden] { display: none !important; }
+.empty-note { margin: 1rem 0 0; color: var(--ink-soft); font-style: italic; }
+
+/* Category chips: pressed = shown. "All" sits beside them as a plain checkbox. */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin: 0 0 2.25rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+    display: inline-flex; align-items: center; gap: 0.45em;
+    padding: 0.35em 0.95em; border: 1px solid var(--rule); border-radius: 999px;
+    background: transparent; color: var(--ink-soft);
+    font: inherit; font-size: 0.95rem; cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.chip:hover { border-color: var(--link); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--link); border-color: var(--link); color: var(--bg); }
+.chip[disabled] { opacity: 0.45; cursor: default; background: transparent; border-style: dashed; color: var(--ink-soft); }
+.chip-count { font-size: 0.8em; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.all-toggle { display: inline-flex; align-items: center; gap: 0.4em; color: var(--ink-soft); cursor: pointer; user-select: none; }
+.all-toggle input { width: 1.05rem; height: 1.05rem; accent-color: var(--link); margin: 0; }
+html[data-skin="pulp"] .chip { border-width: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem; }
+
+/* The Collection: compact rows, a search box above them. */
+.search { margin: 0 0 1rem; }
+.search input {
+    width: 100%; max-width: 28rem; padding: 0.55em 0.85em;
+    border: 1px solid var(--rule); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font: inherit;
+}
+.search input:focus { outline: 2px solid var(--link); outline-offset: 1px; }
+.item-list { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--rule); }
+.item {
+    display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; gap: 0 1rem; align-items: center;
+    padding: 0.7rem 0; border-top: 1px solid var(--rule);
+}
+.item-icon { width: 3.5rem; height: 2rem; color: var(--accent); }
+.item-main { display: flex; flex-direction: column; min-width: 0; }
+.item-title a { color: var(--ink); font-weight: 600; }
+.item-title a:hover { color: var(--link); }
+.item-meta { font-size: 0.85rem; color: var(--ink-soft); }
+.item-cat { text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.78rem; }
+.kind-badge {
+    display: inline-block; margin-left: 0.3em; padding: 0.1em 0.5em; border: 1px dashed var(--ink-soft); border-radius: 0.3em;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; color: var(--ink-soft);
+}
+
+/* Guestbook: a framed empty card for now. */
+.guestbook-card {
+    padding: 1.5rem 1.75rem; border: 1px dashed var(--rule); border-radius: 0.5rem;
+    background: var(--surface); color: var(--ink-soft); max-width: 38rem;
+}
+.guestbook-card p { margin: 0; }
+.guestbook-card .guestbook-lead { margin-bottom: 0.4rem; font-size: 1.2rem; color: var(--ink); font-style: italic; }
+.home { padding-bottom: 3rem; }
 
 @media (max-width: 40rem) {
     .entry { grid-template-columns: minmax(0, 1fr); }
     .entry .glyph { width: 6rem; height: 3.4rem; }
+    .item { grid-template-columns: 2.6rem minmax(0, 1fr); }
+    .item-icon { width: 2.6rem; height: 1.5rem; }
+    .item .entry-langs { grid-column: 2; margin-top: 0.3rem; }
+    .item .entry-langs .lang-badge:first-child, .item .entry-langs .kind-badge { margin-left: 0; }
 }
 
 /* Language badges ("EN", "RU"): on the home page and at the top of each article. */

@@ -1,0 +1,30 @@
+{
+  "id": "krm-demo-org-site",
+  "kind": "project",
+  "category": "projects",
+  "languages": [
+    "en"
+  ],
+  "link": "https://github.com/krm-demo/krm-demo-org-site",
+  "title": {
+    "en": {
+      "full": "krm-demo-org-site: the sources of this very site",
+      "medium": "This site's sources",
+      "short": "krm-demo-org-site"
+    }
+  },
+  "summary": {
+    "en": "Markdown in, pages out: a GitHub repository with a preview on every push to main and a release to AWS on every tag."
+  },
+  "icon": {
+    "large": "icons/krm-demo-org-site.svg",
+    "small": "icons/krm-demo-org-site.svg"
+  },
+  "createdAt": "2026-11-16T21:08:05-05:00",
+  "updatedAt": "2026-11-18T22:30:00-05:00",
+  "stats": {
+    "lastSeenAt": null,
+    "visitors": null,
+    "uniqueVisitors": null
+  }
+}

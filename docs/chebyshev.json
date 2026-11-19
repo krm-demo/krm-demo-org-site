@@ -1,0 +1,36 @@
+{
+  "id": "chebyshev",
+  "kind": "article",
+  "category": "math",
+  "languages": [
+    "en",
+    "ru"
+  ],
+  "title": {
+    "en": {
+      "full": "Chebyshev polynomials: cosines in disguise",
+      "medium": "Chebyshev polynomials",
+      "short": "Chebyshev"
+    },
+    "ru": {
+      "full": "Полиномы Чебышёва: переодетые косинусы",
+      "medium": "Полиномы Чебышёва",
+      "short": "Чебышёв"
+    }
+  },
+  "summary": {
+    "en": "Fitting data on an interval and on a circle: why Chebyshev's polynomials beat plain powers, how they dodge the Gibbs phenomenon, and what Watt's steam engine has to do with it.",
+    "ru": "Приближение данных на отрезке и на окружности: чем полиномы Чебышёва лучше простых степеней, как они обходят эффект Гиббса и при чём тут паровая машина Уатта."
+  },
+  "icon": {
+    "large": "icons/chebyshev.svg",
+    "small": "icons/chebyshev.svg"
+  },
+  "createdAt": "2026-11-18T02:03:15-05:00",
+  "updatedAt": "2026-11-18T17:37:16-05:00",
+  "stats": {
+    "lastSeenAt": null,
+    "visitors": null,
+    "uniqueVisitors": null
+  }
+}

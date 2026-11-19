@@ -1,0 +1,52 @@
+{
+  "categories": [
+    {
+      "id": "math",
+      "title": {
+        "en": "Math",
+        "ru": "Математика"
+      },
+      "icon": null
+    },
+    {
+      "id": "it",
+      "title": {
+        "en": "IT",
+        "ru": "IT"
+      },
+      "icon": null
+    },
+    {
+      "id": "projects",
+      "title": {
+        "en": "Projects",
+        "ru": "Проекты"
+      },
+      "icon": null
+    },
+    {
+      "id": "humor",
+      "title": {
+        "en": "Humor",
+        "ru": "Юмор"
+      },
+      "icon": null
+    },
+    {
+      "id": "stories",
+      "title": {
+        "en": "Stories",
+        "ru": "Истории"
+      },
+      "icon": null
+    },
+    {
+      "id": "photos",
+      "title": {
+        "en": "Photos",
+        "ru": "Фото"
+      },
+      "icon": null
+    }
+  ]
+}

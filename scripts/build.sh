@@ -26,6 +26,9 @@ for md in docs/*.md; do
   scripts/md-to-html.py "$md" "dist/$(basename "${md%.md}").html"
 done
 
+# Home page: category chips, Current Exhibition and The Collection, from the profiles docs/<id>.json.
+scripts/build-home.py dist
+
 # Version shown in the footer.
 #   release (a v* tag):  the tag plus the run number of the release workflow, e.g. v0.3.0.3
 #   preview (a branch):  the latest v* tag before it, marked as a preview build,  e.g. v0.3.0-preview.47

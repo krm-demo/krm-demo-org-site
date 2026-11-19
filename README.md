@@ -14,8 +14,10 @@ Sources of https://krm-demo.org.
 ## Layout
 
 - `site/` — the hand-written pages and assets: `index.html`, `error.html`, `site.css` (layout and the skins), `site.js` (skin switcher),
-  `build-site-info.js` (footer). No CSS framework is used.
-- `docs/*.md` — the articles listed on the home page under "Pulp Fiction". The build turns each one into a page; the pages are not committed.
+  `build-site-info.js` (footer), `home.js` (category chips and search on the home page). No CSS framework is used.
+- Home page sections: **Current Exhibition** (new or featured), **The Collection** (everything, with a search box),
+  **Guestbook** (placeholder). The first two are generated from the profiles below by `scripts/build-home.py`.
+- `docs/*.md` — the articles. Each one also needs a profile `docs/<name>.json` (see "Article profiles"). The build turns each one into a page; the pages are not committed.
   - Translations are named `<name>.<lang>.md` (`chebyshev.en.md`, `chebyshev.ru.md`); each page links to the others.
   - A heading that starts with a number gets the same id in every language (`## 3. …` → `s3`, `### 1.4 …` → `s1-4`).
     Link to it as `[§1.4](chebyshev.en.md#s1-4)`: on the site that opens the section, on GitHub the file.
@@ -25,6 +27,8 @@ Sources of https://krm-demo.org.
   - The full list of what an article may contain is at the top of `scripts/md-to-html.py`.
 - `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/`, generates the article pages,
   copies KaTeX's stylesheet and fonts to `dist/vendor/katex/`, and writes `dist/build-site.json`.
+- `scripts/build-home.py` — fills the home page (`<!-- build-home:… -->` markers in `site/index.html`) from the profiles
+  and writes `dist/catalog.json` with all of them.
 - `scripts/install-build-deps.sh` — installs what the build needs (Python: `markdown`, `pygments`; Node: `katex`). Run it once before a local build.
 - `site/visit-badge.js` — the "Opened this week: N" line on article pages. It reads `stats.json`, which is **not** built here:
   an hourly function in AWS writes it into the site bucket from the CloudFront access logs.
@@ -137,3 +141,35 @@ browser ──https──▶ CloudFront E3QPJMC44SZLZV ──http──▶ S3 we
   - permissions (inline policy `deploy-to-krm-demo-org-bucket`): `s3:ListBucket` on the bucket, `s3:PutObject` / `s3:DeleteObject` on its objects,
     `cloudfront:CreateInvalidation` / `cloudfront:GetInvalidation` on distribution `E3QPJMC44SZLZV`. Nothing else.
 - If the release fails at **Configure AWS credentials**: CloudTrail (us-west-2) → event `AssumeRoleWithWebIdentity` shows the exact subject GitHub sent; compare it with the role's trust policy.
+
+## Article profiles
+
+Every article or project has one profile, `docs/<id>.json`, next to its Markdown (one profile per article, shared by its translations).
+Projects have a profile and a `link` instead of Markdown. A bad profile stops the build.
+
+```json
+{
+  "id": "fft",                       // = file name; the pages are fft.<lang>.html (or fft.html with one language)
+  "kind": "article",                 // article | project
+  "category": "math",                // one of docs/categories.json
+  "languages": ["en", "ru"],
+  "link": "https://…",               // projects only: where the entry opens
+  "featured": true,                  // optional: keep in Current Exhibition however old
+  "title": { "en": { "full": "…", "medium": "…", "short": "…" }, "ru": { … } },
+  "summary": { "en": "…", "ru": "…" },
+  "icon": { "large": "icons/fft.svg", "small": "icons/fft.svg" },   // SVG in docs/icons/, stroke="currentColor"
+  "createdAt": "2026-11-18T15:43:15-05:00",
+  "updatedAt": "2026-11-18T17:37:16-05:00",
+  "stats": { "lastSeenAt": null, "visitors": null, "uniqueVisitors": null }
+}
+```
+
+- `title.full` is shown in Current Exhibition, `title.medium` in The Collection; `short` is for tight places (tabs, chips).
+- `icon.large` is drawn about 120×68, `icon.small` about 56×32; both may point to the same file until a simpler small drawing is worth making.
+- Current Exhibition = `featured` plus everything updated in the last 45 days, newest first, at most 5 (constants in `scripts/build-home.py`).
+- `docs/categories.json` lists the category chips in order; each has `title.en`/`title.ru` and an `icon` (not used yet).
+  Chips for empty categories are shown greyed out.
+- `stats` is reserved. The live numbers are in `stats.json` (hourly, from the CloudFront logs) and are not committed:
+  writing counters into git every hour would fill the history with noise and rebuild the preview each time.
+  The Collection shows `total` from `stats.json` where it exists. `lastSeenAt` and `uniqueVisitors` need a change to the
+  counter function (and, for unique visitors, a field in the logs that tells visitors apart), so they stay `null` for now.

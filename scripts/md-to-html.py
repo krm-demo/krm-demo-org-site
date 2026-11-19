@@ -37,9 +37,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 LANG_NAMES = {"en": "English", "ru": "Русский"}
 UI = {
-    "en": {"home": "Home", "source": "Markdown source", "section": "Pulp Fiction", "versions": "Read in",
+    "en": {"home": "Home", "source": "Markdown source", "section": "The Collection", "versions": "Read in",
            "contents": "Contents", "anchor": "Link to this section"},
-    "ru": {"home": "Главная", "source": "Исходник в Markdown", "section": "Pulp Fiction", "versions": "Читать на",
+    "ru": {"home": "Главная", "source": "Исходник в Markdown", "section": "Коллекция", "versions": "Читать на",
            "contents": "Содержание", "anchor": "Ссылка на этот раздел"},
 }
 REFERENCE_HEADINGS = {"references", "литература", "источники"}
@@ -60,7 +60,7 @@ TEMPLATE = """<!DOCTYPE html>
 <header class="site-head">
     <div class="wrap">
         <a class="brand" href="./">krm-demo</a>
-        <span class="brand-section">{section}</span>
+        <a class="brand-section" href="./#collection">{section}</a>
         <div id="skin-switch"></div>
     </div>
 </header>
