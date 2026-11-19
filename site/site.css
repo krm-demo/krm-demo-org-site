@@ -9,7 +9,7 @@
 
 :root,
 html[data-skin="light"] {
-    --wordmark-name: #8fb0e0;     /* [(krm-demo)]: the name ... */
+    --wordmark-name: #eef4fd;     /* [(krm-demo)]: the name ... */
     --wordmark-bracket: #5f86c4;  /* ... and its brackets */
     color-scheme: light;
     --bg: #fbfcfe;
@@ -37,7 +37,7 @@ html[data-skin="light"] {
 }
 
 html[data-skin="dark"] {
-    --wordmark-name: #7f8da3;     /* [(krm-demo)]: the name ... */
+    --wordmark-name: #e6ebf3;     /* [(krm-demo)]: the name ... */
     --wordmark-bracket: #56627a;  /* ... and its brackets */
     color-scheme: dark;
     --bg: #14181f;
@@ -59,7 +59,7 @@ html[data-skin="dark"] {
 
 /* Scientific: a typeset journal page — serif, justified, black on white, booktabs tables. */
 html[data-skin="scientific"] {
-    --wordmark-name: #6b6b6b;     /* [(krm-demo)]: the name ... */
+    --wordmark-name: #111111;     /* [(krm-demo)]: the name ... */
     --wordmark-bracket: #9a9a9a;  /* ... and its brackets */
     color-scheme: light;
     --bg: #ffffff;
@@ -87,7 +87,7 @@ html[data-skin="scientific"] {
 
 /* Pulp: a cheap paperback — newsprint, heavy condensed titles, black rules, one loud red. */
 html[data-skin="pulp"] {
-    --wordmark-name: #6b4a00;     /* [(krm-demo)]: the name ... */
+    --wordmark-name: #1c1814;     /* [(krm-demo)]: the name ... */
     --wordmark-bracket: #8f6a0c;  /* ... and its brackets */
     color-scheme: light;
     --bg: #f1e7cf;
@@ -149,7 +149,7 @@ code, pre, kbd { font-family: var(--font-mono); }
 @font-face { font-family: "KRM Mark"; src: url("fonts/JetBrainsMono-ExtraBold-latin.woff") format("woff"); font-weight: 800; font-style: normal; font-display: swap; }
 @font-face { font-family: "KRM Mark"; src: url("fonts/JetBrainsMono-MediumItalic-latin.woff") format("woff"); font-weight: 500; font-style: italic; font-display: swap; }
 .brand {
-    font-family: "KRM Mark", "JetBrains Mono", ui-monospace, monospace; font-size: 1.6rem; line-height: 1;
+    font-family: "KRM Mark", "JetBrains Mono", ui-monospace, monospace; font-size: 2.1rem; line-height: 1;
     color: var(--wordmark-name); white-space: nowrap; text-decoration: none;
 }
 .brand:hover { color: var(--wordmark-name); opacity: 0.85; text-decoration: none; }
@@ -195,8 +195,8 @@ html[data-skin="pulp"] .site-head { border-bottom: 4px solid var(--head-rule); }
 @media (max-width: 40rem) {
     .wrap { padding: 0 1rem; }
     .site-head .wrap { gap: 0.6rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .brand { font-size: 1.2rem; }
-    .brand-section { font-size: 0.875rem; }
+    .brand { font-size: min(1.45rem, 5.6vw); }   /* shrinks on the narrowest phones so the header stays one row */
+    .brand-section { display: none; }   /* no room next to the larger wordmark; the page has its own "← Home" link */
     .brand-section::before { margin-right: 0.35rem; }
     .skin-switch { gap: 0.1rem; }
     .lang-switch-head + .skin-switch { margin-left: 0.4rem; }
@@ -204,6 +204,14 @@ html[data-skin="pulp"] .site-head { border-bottom: 4px solid var(--head-rule); }
     .skin-switch button, .skin-switch button[aria-checked="true"] { padding: 0.15rem; }
     .skin-switch button[aria-checked="true"] .skin-name { display: none; }
     .skin-switch .swatch { width: 1.05rem; height: 1.05rem; }
+}
+
+/* The narrowest phones (320 px): a smaller wordmark and tighter header. */
+@media (max-width: 22.5rem) {
+    .brand { font-size: 1.05rem; }
+    .site-head .wrap { gap: 0.4rem; }
+    .lang-switch-head + .skin-switch { margin-left: 0.2rem; }
+    .lang-switch-head button { padding: 0.1rem 0.2rem; }
 }
 
 /* Very wide monitors: everything a little larger, so the page does not look lost. */
