@@ -26,6 +26,11 @@ Sources of https://krm-demo.org.
 - `scripts/build.sh <target>` — the build used by both workflows: copies `site/` to `dist/`, generates the article pages,
   copies KaTeX's stylesheet and fonts to `dist/vendor/katex/`, and writes `dist/build-site.json`.
 - `scripts/install-build-deps.sh` — installs what the build needs (Python: `markdown`, `pygments`; Node: `katex`). Run it once before a local build.
+- `site/visit-badge.js` — the "Opened this week: N" line on article pages. It reads `stats.json`, which is **not** built here:
+  an hourly function in AWS writes it into the site bucket from the CloudFront access logs.
+- `infra/visit-counter.yaml` — the CloudFormation template for that counter (log bucket, log delivery, function, schedule).
+  Deployed as stack `krm-demo-org-visit-counter` in `us-east-1`. To update it after editing the template:
+  `aws cloudformation deploy --region us-east-1 --stack-name krm-demo-org-visit-counter --template-file infra/visit-counter.yaml --capabilities CAPABILITY_IAM`
 - `drafts/` — material being prepared; not part of the site.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.

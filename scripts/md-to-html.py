@@ -70,6 +70,7 @@ TEMPLATE = """<!DOCTYPE html>
         <p class="article-nav">
             <a href="./">&larr; {home}</a> · <a href="{repo}/blob/main/{source}" target="_blank" rel="noopener">{source_label}</a>
             {switcher}
+            <span id="visit-badge"></span>
         </p>
 {body}
     </article>
@@ -79,6 +80,7 @@ TEMPLATE = """<!DOCTYPE html>
     <div class="wrap"><span id="build-info">loading build info…</span></div>
 </footer>
 <script src="build-site-info.js"></script>
+<script src="visit-badge.js"></script>
 
 </body>
 </html>

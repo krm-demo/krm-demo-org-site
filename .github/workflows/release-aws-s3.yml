@@ -48,6 +48,8 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # stats.json (visit counts) is written into the bucket by the counter function, not by this build:
+      # it is excluded so that --delete leaves it alone.
       # Pages may be cached for 5 minutes. build-site.json only for 10 seconds: open pages poll it
       # to notice a new version, so a stale copy in CloudFront would delay that by up to 5 minutes.
       - name: Sync to S3
@@ -55,6 +57,7 @@ jobs:
           aws s3 sync dist/ "s3://${S3_BUCKET}/" \
             --delete \
             --exclude build-site.json \
+            --exclude stats.json \
             --cache-control "public, max-age=300"
           aws s3 cp dist/build-site.json "s3://${S3_BUCKET}/build-site.json" \
             --content-type application/json \

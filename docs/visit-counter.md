@@ -1,8 +1,8 @@
 # Who is reading this? Counting visits without a tracker
 
-*How many people open these pages, measured where the pages are served and with nothing added to them: no script, no cookie. What the owner can already see, what it would take to count each article, and which numbers could be shown to everybody. As of 2026-11-18; nothing described in [§5](#s5) is switched on yet.*
+*How many people open these pages, measured where the pages are served and with nothing added to them: no script, no cookie. What the owner can already see, what it would take to count each article, and which numbers could be shown to everybody. As of 2026-11-18: the counter was switched on that evening, so the numbers start there.*
 
-**The short version.** krm-demo.org is served by Amazon CloudFront, and CloudFront counts every request whether we ask it to or not. Totals for the whole site are available today, and so is a list of the most requested pages; both need an AWS login. A counter that every visitor can see takes one more step: a small scheduled job that turns the request logs into a tiny file of totals, which the page then reads. That is the same trick this site already uses to notice [a new version of itself](page-refresh.md).
+**The short version.** krm-demo.org is served by Amazon CloudFront, and CloudFront counts every request whether we ask it to or not. Totals for the whole site are available today, and so is a list of the most requested pages; both need an AWS login. A counter that every visitor can see takes one more step: a small scheduled job that turns the request logs into a tiny file of totals, which the page then reads. That is how it is done here ([§5](#s5)), and it is the same trick this site already uses to notice [a new version of itself](page-refresh.md).
 
 ## 1. A request is not a reader
 
@@ -26,7 +26,7 @@ Two effects blur even that number, and both are harmless. A reload within five m
 | --- | --- | --- | --- | --- | --- |
 | CloudWatch metrics | Requests, bytes and error rates for the whole site, minute by minute | No | The owner, in the AWS console; or anyone, through a shared dashboard ([§3](#s3)) | Free | Nothing: on by default |
 | CloudFront console reports | The 50 most requested addresses with their request counts; where visitors came from; their devices, browsers and countries | Yes | The owner, in the AWS console | Free | Nothing: on by default |
-| Access logs | One line per request: time, address, answer, referring page, browser, IP address | Yes | The owner only; the lines contain IP addresses | Cents per month for storage | One CloudFront setting and a private bucket |
+| Access logs | One line per request: time, address, answer, referring page, browser, and more if asked for | Yes | The owner only | Cents per month for storage | A private bucket and a delivery setting |
 | A counter file made from the logs | Whatever totals we choose to publish | Yes | Everybody | Close to nothing | A scheduled job ([§5](#s5)) |
 
 The second row is the pleasant surprise. The [popular objects report](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/popular-objects-report.html) covers any range within the last 60 days and needs no logging to be switched on. In the AWS console it is under CloudFront, "Reports & analytics", "Popular objects". The same menu holds "Top referrers" and "Viewers".
@@ -46,21 +46,31 @@ Nothing runs in the reader's browser beyond fetching one small file, and no cook
 
 ## 4. What this kind of counting cannot tell
 
-- **People.** It counts openings, not persons. One reader on a phone and a laptop is two; ten readers behind one office network are still ten openings but one IP address.
+- **People.** It counts openings, not persons. One reader on a phone and a laptop is two; a reader who comes back every day is counted every day.
 - **Robots that lie.** Search engines say who they are and are easy to leave out. Scrapers that pretend to be a browser are counted as readers.
 - **Attention.** There is no "time on page" and no "read to the end". Only a script in the page could measure that.
 - **The preview site.** GitHub Pages keeps no logs for us, so only krm-demo.org is counted. That is right: the preview is for testing.
 
 A script-based counter errs the other way: it misses every reader whose browser blocks trackers. The two methods never agree, and the truth lies between them. For a site of long articles, "how many times was this opened" is the question, and the logs answer it.
 
-## 5. How to switch it on
+## 5. How it is set up here
 
-In order, each step useful on its own:
+Everything is one CloudFormation template, [`infra/visit-counter.yaml`](https://github.com/krm-demo/krm-demo-org-site/blob/main/infra/visit-counter.yaml), deployed once as the stack `krm-demo-org-visit-counter`:
 
-1. **Look at what already exists.** Open the popular objects report and see which pages are requested. No change to anything.
-2. **Turn on access logs.** In the CloudFront distribution, enable [standard logging](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) to a new private bucket, with a rule that deletes log files after 90 days. This is a change to the AWS setup, so the owner decides.
-3. **Add the job and the file.** A small scheduled function inside AWS is the simplest home for the job: it needs to read one bucket and write one file, and no new permission has to be given to GitHub. Then the home page shows a number beside each title.
-4. **Optionally, share the pulse.** One public dashboard with the requests-per-day chart, linked from the footer.
+- **A private bucket for the logs.** Log files are deleted after 90 days.
+- **Log delivery from CloudFront**, limited to nine fields: date, time, method, address, answer code, referring page, browser, cache result and country. The visitor's IP address is not among them, so it is never stored.
+- **A small function that runs every hour.** It reads the log files that arrived since its last run, applies the rules of [§1](#s1), keeps running totals, and writes `stats.json` into the site's bucket. The file looks like this:
+
+```json
+{"updated": "2026-11-19T02:00:00Z", "since": "2026-11-19",
+ "pages": {"fft.ru.html": {"week": 12, "total": 40}, "index.html": {"week": 31, "total": 95}}}
+```
+
+- **The badge.** Each article has a quiet line near the top, "Opened this week: 12". One click adds the total, the starting date and the time of the last count. `visit-badge.js` draws it from `stats.json`; where the file is missing, as on the preview site, nothing is shown.
+
+Numbers appear with a delay of up to about two hours: CloudFront delivers logs in batches, the function runs hourly, and the file may be cached for five minutes. Removing the whole thing is one action: delete the stack (and empty the log bucket first).
+
+Still optional: a shared CloudWatch dashboard with the requests-per-day chart ([§3](#s3)).
 
 ## 6. History: "You are visitor number 001337"
 
