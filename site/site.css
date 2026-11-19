@@ -159,6 +159,18 @@ a.brand-section:hover { text-decoration: underline; }
 .skin-switch [data-skin-option="scientific"] .swatch { background: linear-gradient(135deg, #ffffff 50%, #7a1f2b 50%); }
 .skin-switch [data-skin-option="pulp"] .swatch       { background: linear-gradient(135deg, #efb81f 50%, #c62a1d 50%); }
 
+/* Language switch (built by site.js): two-letter codes, the current one outlined. */
+.lang-switch-head { margin-left: auto; flex: none; display: flex; gap: 0.15rem; }
+.lang-switch-head + .skin-switch { margin-left: 0.9rem; }
+.lang-switch-head button {
+    padding: 0.2rem 0.45rem; border: 1px solid transparent; border-radius: 0.3rem;
+    background: none; color: inherit; font: inherit; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
+    line-height: 1.2; cursor: pointer; opacity: 0.7;
+}
+.lang-switch-head button:hover { opacity: 1; }
+.lang-switch-head button[aria-checked="true"] { border-color: currentColor; opacity: 1; }
+.lang-switch-head button:disabled { opacity: 0.3; cursor: not-allowed; }
+
 html[data-skin="scientific"] .site-head { border-bottom: 3px double var(--head-rule); }
 html[data-skin="scientific"] .brand { font-variant: small-caps; letter-spacing: 0.04em; }
 html[data-skin="pulp"] .site-head { border-bottom: 4px solid var(--head-rule); }
@@ -172,6 +184,8 @@ html[data-skin="pulp"] .brand { font-size: 1.9rem; text-transform: uppercase; le
     .brand-section { font-size: 0.875rem; }
     .brand-section::before { margin-right: 0.35rem; }
     .skin-switch { gap: 0.1rem; }
+    .lang-switch-head + .skin-switch { margin-left: 0.4rem; }
+    .lang-switch-head button { padding: 0.15rem 0.3rem; font-size: 0.75rem; }
     .skin-switch button, .skin-switch button[aria-checked="true"] { padding: 0.15rem; }
     .skin-switch button[aria-checked="true"] .skin-name { display: none; }
     .skin-switch .swatch { width: 1.05rem; height: 1.05rem; }

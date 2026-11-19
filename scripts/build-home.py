@@ -87,11 +87,19 @@ def icon_svg(p, size, css_class):
     return svg.replace("<svg", f'<svg class="{css_class}" aria-hidden="true"', 1)
 
 
+def ru_text(text_ru, text_en):
+    """data-ru-text for site.js, when there is a Russian text that differs from the English one."""
+    return f' data-ru-text="{esc(text_ru)}"' if text_ru and text_ru != text_en else ""
+
+
 def title_link(p, size):
-    """Title in English; visitors whose browser is set to Russian get the Russian page (data-ru, see home.js)."""
+    """Written in English; site.js swaps in the Russian title and page (data-ru-text, data-ru) when Russian is chosen.
+    An article that exists only in English keeps its English title and link."""
     attrs = f'href="{esc(url(p, "en"))}"'
     if "ru" in p["languages"] and len(p["languages"]) > 1:
         attrs += f' data-ru="{esc(url(p, "ru"))}"'
+    if "ru" in p["title"]:
+        attrs += ru_text(title(p, "ru", size), title(p, "en", size))
     if p.get("link"):
         attrs += ' rel="external"'
     return f'<a {attrs}>{esc(title(p, "en", size))}</a>'
@@ -121,6 +129,11 @@ def common_attrs(p):
             f'data-page="{esc("" if p.get("link") else url(p, "en"))}"')
 
 
+def summary_ru(p):
+    summary = p.get("summary", {})
+    return ru_text(summary.get("ru"), summary.get("en"))
+
+
 def exhibition_html(profiles, now):
     cutoff = now - dt.timedelta(days=EXHIBITION_DAYS)
     chosen = [p for p in profiles if p.get("featured") or p["updatedAt_dt"] >= cutoff][:EXHIBITION_MAX]
@@ -130,7 +143,7 @@ def exhibition_html(profiles, now):
                 {icon_svg(p, "large", "glyph")}
                 <div>
                     <h3>{title_link(p, "full")}</h3>
-                    <p>{esc(p.get("summary", {}).get("en", ""))}</p>
+                    <p{summary_ru(p)}>{esc(p.get("summary", {}).get("en", ""))}</p>
                 </div>
                 <div class="entry-langs">{lang_badges(p)}</div>
             </li>""")
@@ -144,7 +157,7 @@ def collection_html(profiles, cat_titles):
                 {icon_svg(p, "small", "item-icon")}
                 <div class="item-main">
                     <span class="item-title">{title_link(p, "medium")}</span>
-                    <span class="item-meta"><span class="item-cat">{esc(cat_titles[p["category"]])}</span> ·
+                    <span class="item-meta"><span class="item-cat"{ru_text(cat_titles[p["category"]]["ru"], cat_titles[p["category"]]["en"])}>{esc(cat_titles[p["category"]]["en"])}</span> ·
                         <time datetime="{esc(p["updatedAt"])}">{p["updatedAt_dt"].strftime("%Y-%m-%d")}</time><span
                         class="item-visits"></span></span>
                 </div>
@@ -162,7 +175,8 @@ def chips_html(categories, profiles):
         n = counts.get(c["id"], 0)
         empty = " disabled" if n == 0 else ""
         out.append(f'<button type="button" class="chip" data-category="{esc(c["id"])}" aria-pressed="true"'
-                   f'{empty}>{esc(c["title"]["en"])} <span class="chip-count">{n}</span></button>')
+                   f'{empty}><span{ru_text(c["title"].get("ru"), c["title"]["en"])}>{esc(c["title"]["en"])}</span> '
+                   f'<span class="chip-count">{n}</span></button>')
     return "\n            ".join(out)
 
 
@@ -172,7 +186,7 @@ def main():
     dist = sys.argv[1]
     with open(os.path.join(DOCS, "categories.json"), encoding="utf-8") as f:
         categories = json.load(f)["categories"]
-    cat_titles = {c["id"]: c["title"]["en"] for c in categories}
+    cat_titles = {c["id"]: c["title"] for c in categories}
     profiles = load_profiles(set(cat_titles))
     now = dt.datetime.now(dt.timezone.utc)
 

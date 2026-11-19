@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-i18n>
 <head>
-    <title>krm-demo</title>
+    <title data-ru-text="krm-demo">krm-demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Site icon [(-)]: site.js swaps these for the current skin (drawn by scripts/make-favicons.py). -->
@@ -19,6 +19,7 @@
 <header class="site-head">
     <div class="wrap">
         <a class="brand" href="./">krm-demo</a>
+        <div id="lang-switch"></div>
         <div id="skin-switch"></div>
     </div>
 </header>
@@ -29,42 +30,42 @@
          edit the profiles, not the generated lists. home.js makes the chips and the search work. -->
 
     <!-- Category chips: each one switches its category on or off; "All" switches every one. -->
-    <div class="filters" role="group" aria-label="Categories">
+    <div class="filters" role="group" aria-label="Categories" data-ru-label="Категории">
         <div class="chips">
             <!-- build-home:chips -->
         </div>
-        <label class="all-toggle"><input type="checkbox" id="all-categories" checked> All</label>
+        <label class="all-toggle"><input type="checkbox" id="all-categories" checked> <span data-ru-text="Все">All</span></label>
     </div>
 
     <!-- Current Exhibition: what is new or worth seeing now. -->
     <section aria-labelledby="exhibition">
-        <h2 id="exhibition">Current Exhibition</h2>
-        <p class="section-note">New and noteworthy: long notes with the proofs left in.</p>
+        <h2 id="exhibition" data-ru-text="Текущая экспозиция">Current Exhibition</h2>
+        <p class="section-note" data-ru-text="Новое и заметное: длинные заметки, доказательства на месте.">New and noteworthy: long notes with the proofs left in.</p>
         <ul class="reading-list" id="exhibition-list">
 <!-- build-home:exhibition -->
         </ul>
-        <p class="empty-note" hidden>Nothing on show in the chosen categories. Try another chip.</p>
+        <p class="empty-note" hidden data-ru-text="В выбранных категориях сейчас ничего не выставлено. Попробуйте другую.">Nothing on show in the chosen categories. Try another chip.</p>
     </section>
 
     <!-- The Collection: everything ever written, newest first, with a search box. -->
     <section aria-labelledby="collection" class="collection">
-        <h2 id="collection">The Collection</h2>
-        <p class="section-note">Everything ever put on show. Nothing is thrown away.</p>
+        <h2 id="collection" data-ru-text="Коллекция">The Collection</h2>
+        <p class="section-note" data-ru-text="Всё, что когда-либо выставлялось. Ничего не выбрасываем.">Everything ever put on show. Nothing is thrown away.</p>
         <div class="search">
-            <input type="search" id="collection-search" placeholder="Search the collection…" aria-label="Search the collection" autocomplete="off">
+            <input type="search" id="collection-search" placeholder="Search the collection…" aria-label="Search the collection" data-ru-placeholder="Поиск по коллекции…" data-ru-label="Поиск по коллекции" autocomplete="off">
         </div>
         <ul class="item-list" id="collection-list">
 <!-- build-home:collection -->
         </ul>
-        <p class="empty-note" hidden>No exhibits match. Try fewer words or more chips.</p>
+        <p class="empty-note" hidden data-ru-text="Ничего не нашлось. Попробуйте меньше слов или больше категорий.">No exhibits match. Try fewer words or more chips.</p>
     </section>
 
     <!-- Guestbook: a way to write to the owner, still to come. -->
     <section aria-labelledby="guestbook" class="guestbook">
-        <h2 id="guestbook">Guestbook</h2>
+        <h2 id="guestbook" data-ru-text="Гостевая книга">Guestbook</h2>
         <div class="guestbook-card">
-            <p class="guestbook-lead">The guestbook is still at the bindery.</p>
-            <p>Until it arrives, this wall is for rent. Your ad could hang here, tastefully framed.</p>
+            <p class="guestbook-lead" data-ru-text="Гостевая книга ещё в переплётной мастерской.">The guestbook is still at the bindery.</p>
+            <p data-ru-text="Пока её нет, эта стена сдаётся. Здесь могла бы висеть ваша реклама — в приличной раме.">Until it arrives, this wall is for rent. Your ad could hang here, tastefully framed.</p>
         </div>
     </section>
 

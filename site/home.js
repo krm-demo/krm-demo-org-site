@@ -4,7 +4,8 @@
 // Chips work like checkboxes: each one switches its category on or off, any number at once.
 // "All" is ticked when every chip is on, half-ticked when some are, empty when none are;
 // clicking it switches every chip on, or every chip off when all were on.
-// The choice lives only in the page (nothing is stored). Where stats.json exists, The Collection also
+// The choice is kept for a year in the cookie "cats-off": the categories switched OFF, comma-separated,
+// so that a category added later shows up switched on. Where stats.json exists, The Collection also
 // shows how many times each page was opened (the same numbers as the badge on the articles).
 (function () {
   var chips = Array.prototype.slice.call(document.querySelectorAll('.chip:not([disabled])'));
@@ -13,6 +14,21 @@
   if (!all) return;
 
   function on(chip) { return chip.getAttribute('aria-pressed') === 'true'; }
+
+  function readOff() {
+    var m = document.cookie.match(/(?:^|; )cats-off=([^;]*)/);
+    return m ? decodeURIComponent(m[1]).split(',').filter(Boolean) : [];
+  }
+
+  function saveOff() {
+    var off = chips.filter(function (c) { return !on(c); }).map(function (c) { return c.getAttribute('data-category'); });
+    document.cookie = 'cats-off=' + encodeURIComponent(off.join(',')) + '; Max-Age=31536000; Path=/; SameSite=Lax';
+  }
+
+  var off = readOff();
+  chips.forEach(function (c) {
+    if (off.indexOf(c.getAttribute('data-category')) >= 0) c.setAttribute('aria-pressed', 'false');
+  });
 
   function chosen() {
     var set = {};
@@ -48,29 +64,42 @@
   chips.forEach(function (chip) {
     chip.addEventListener('click', function () {
       chip.setAttribute('aria-pressed', String(!on(chip)));
+      saveOff();
       apply();
     });
   });
   all.addEventListener('change', function () {
     var everyOn = chips.every(on);
     chips.forEach(function (c) { c.setAttribute('aria-pressed', String(!everyOn)); });
+    saveOff();
     apply();
   });
   if (search) search.addEventListener('input', apply);
   apply();
 
   // Visit counts in The Collection, when stats.json is there (production only).
-  var ru = (navigator.language || '').toLowerCase().indexOf('ru') === 0;
+  // Russian: 1 открытие, 2–4 открытия, 5+ открытий (11–14 also "открытий").
+  function opened(n) {
+    if ((document.documentElement.lang || '').indexOf('ru') !== 0) return n + ' opened';
+    var d = n % 10, h = n % 100;
+    var word = d === 1 && h !== 11 ? 'открытие' : d >= 2 && d <= 4 && (h < 12 || h > 14) ? 'открытия' : 'открытий';
+    return n + ' ' + word;
+  }
+
+  var stats = null;
+  function showVisits() {
+    if (!stats) return;
+    document.querySelectorAll('#collection-list .item').forEach(function (row) {
+      var page = row.getAttribute('data-page');
+      var p = page && stats.pages && stats.pages[page];
+      var slot = row.querySelector('.item-visits');
+      if (p && slot) slot.textContent = ' · ' + opened(p.total);
+    });
+  }
+  document.addEventListener('krm:lang', showVisits);
+
   fetch('stats.json', { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function (stats) {
-      document.querySelectorAll('#collection-list .item').forEach(function (row) {
-        var page = row.getAttribute('data-page');
-        var p = page && stats.pages && stats.pages[page];
-        var slot = row.querySelector('.item-visits');
-        if (!p || !slot) return;
-        slot.textContent = ' · ' + p.total + (ru ? ' открытий' : ' opened');
-      });
-    })
+    .then(function (s) { stats = s; showVisits(); })
     .catch(function () { /* no numbers here: show nothing */ });
 })();

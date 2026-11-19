@@ -29,12 +29,33 @@
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var COUNT_WORDS = ['zero', 'one', 'two', 'three'];
 
+  // Russian, used when <html lang> is "ru" (site.js switches it on the home page and says so with "krm:lang").
+  var DAYS_RU = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+  var MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  // "в этот понедельник", "в эту среду", "в это воскресенье" / "в прошлый …", "в прошлую …", "в прошлое …"
+  var DAY_NAMES_RU = ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'];
+  var DAY_GENDER_RU = ['n', 'm', 'm', 'f', 'm', 'f', 'f'];
+  var THIS_RU = { m: 'в этот', f: 'в эту', n: 'в это' };
+  var LAST_RU = { m: 'в прошлый', f: 'в прошлую', n: 'в прошлое' };
+
+  function isRu() { return (document.documentElement.lang || '').indexOf('ru') === 0; }
+  function t(en, ru) { return isRu() ? ru : en; }
+
+  // 1 минуту, 2 минуты, 5 минут; forms = [one, few, many]
+  function pluralRu(n, forms) {
+    var d = n % 10, h = n % 100;
+    var f = d === 1 && h !== 11 ? forms[0] : d >= 2 && d <= 4 && (h < 12 || h > 14) ? forms[1] : forms[2];
+    return n + ' ' + f;
+  }
+
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   // "2026-Nov-16 (Mon) 23:12" in the visitor's time zone
+  // "2026-ноя-16 (пн) 23:12" in Russian
   function natural(d) {
-    return d.getFullYear() + '-' + MONTHS[d.getMonth()] + '-' + pad(d.getDate()) +
-      ' (' + DAYS[d.getDay()].slice(0, 3) + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var ru = isRu();
+    return d.getFullYear() + '-' + (ru ? MONTHS_RU : MONTHS)[d.getMonth()] + '-' + pad(d.getDate()) +
+      ' (' + (ru ? DAYS_RU[d.getDay()] : DAYS[d.getDay()].slice(0, 3)) + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
   // "Nov-16 (Mon) 23:12"
@@ -70,6 +91,39 @@
   // "this Monday", "last Wednesday", "two weeks ago", "this month", "last month", "4 months ago",
   // "last year", "3 years ago".
   function relative(d, now) {
+    return isRu() ? relativeRu(d, now) : relativeEn(d, now);
+  }
+
+  // The same steps in Russian: "только что", "5 минут назад", "вчера", "позавчера", "в эту среду",
+  // "в прошлый понедельник", "две недели назад", "в этом месяце", "в прошлом месяце", "4 месяца назад",
+  // "в прошлом году", "3 года назад".
+  function relativeRu(d, now) {
+    var sec = Math.floor((now - d) / 1000);
+    if (sec < 5) return 'только что';
+    if (sec < 60) return pluralRu(sec, ['секунду', 'секунды', 'секунд']) + ' назад';
+    if (sec < 3600) return pluralRu(Math.floor(sec / 60), ['минуту', 'минуты', 'минут']) + ' назад';
+
+    var days = dayDiff(d, now);
+    if (days === 0 || sec < 6 * 3600) return pluralRu(Math.floor(sec / 3600), ['час', 'часа', 'часов']) + ' назад';
+    if (days === 1) return 'вчера';
+    if (days === 2) return 'позавчера';
+
+    var weeks = Math.round((weekStart(now) - weekStart(d)) / (7 * 86400000));
+    var g = DAY_GENDER_RU[d.getDay()];
+    if (weeks === 0) return THIS_RU[g] + ' ' + DAY_NAMES_RU[d.getDay()];
+    if (weeks === 1) return LAST_RU[g] + ' ' + DAY_NAMES_RU[d.getDay()];
+    if (weeks <= 3) return (weeks === 2 ? 'две' : 'три') + ' недели назад';
+
+    var years = now.getFullYear() - d.getFullYear();
+    var months = years * 12 + now.getMonth() - d.getMonth();
+    if (months === 0) return 'в этом месяце';
+    if (months === 1) return 'в прошлом месяце';
+    if (years === 0) return pluralRu(months, ['месяц', 'месяца', 'месяцев']) + ' назад';
+    if (years === 1) return 'в прошлом году';
+    return pluralRu(years, ['год', 'года', 'лет']) + ' назад';
+  }
+
+  function relativeEn(d, now) {
     var sec = Math.floor((now - d) / 1000);
     if (sec < 5) return 'just now';             // also covers a slightly fast build clock
     if (sec < 60) return plural(sec, 'second') + ' ago';
@@ -150,7 +204,7 @@
     var n = document.createElement('a');
     n.href = ''; n.className = 'foot-reload';
     n.textContent = text;
-    n.title = 'A newer build was published while this page was open';
+    n.title = t('A newer build was published while this page was open', 'Пока страница была открыта, вышла новая версия');
     return n;
   }
 
@@ -161,7 +215,7 @@
     var runUrl = gh && b.run_id ? gh + '/actions/runs/' + b.run_id : null;
     var at = new Date(b.built_at);
     var hasDate = !isNaN(at);
-    var tip = hasDate ? 'Published ' + at.toISOString().replace('.000', '') + ' (UTC)' : '';
+    var tip = hasDate ? t('Published ', 'Опубликовано ') + at.toISOString().replace('.000', '') + ' (UTC)' : '';
     var rel = hasDate ? relative(at, now) : '';
     var zone = hasDate ? zoneName(at) : '';
     var full = hasDate ? natural(at) : '';
@@ -171,14 +225,15 @@
     // The GitHub mark → the sources this build was made from (the tag in production, main on the preview)
     function source() {
       if (!gh || !b.ref) return null;
-      var a = link([], gh + '/tree/' + encodeURI(b.ref), 'Sources on GitHub: ' + b.ref);
+      var a = link([], gh + '/tree/' + encodeURI(b.ref), t('Sources on GitHub: ', 'Исходники на GitHub: ') + b.ref);
       a.appendChild(githubMark());
       return a;
     }
     // The version (latest v* tag + workflow run number) → the workflow run that built it
     function version() {
-      var v = b.version || b.ref || 'local build';
-      var runTitle = b.workflow ? 'Built by workflow "' + b.workflow + '"' + (b.run_number ? ', run #' + b.run_number : '') : null;
+      var v = b.version || b.ref || t('local build', 'локальная сборка');
+      var runTitle = b.workflow ? t('Built by workflow "', 'Собрано workflow «') + b.workflow + t('"', '»') +
+        (b.run_number ? t(', run #', ', запуск №') + b.run_number : '') : null;
       return link(v, runUrl, runTitle);
     }
     // The preview names its environment; the public site doesn't need to.
@@ -186,17 +241,17 @@
     function when(parts) { return hasDate ? link(parts, null, tip) : null; }
     // [published] 2026-Nov-16 (Mon) 23:12 EST, [yesterday]
     function stamp(withZone) {
-      return when([dim('published'), ' ' + full + (withZone && zone ? ' ' + zone : '') + ', ', dim(rel)]);
+      return when([dim(t('published', 'опубликовано')), ' ' + full + (withZone && zone ? ' ' + zone : '') + ', ', dim(rel)]);
     }
 
     // Each variant: [icon, the rest joined with " · "]. The commit stays in build-site.json only.
     return [
       // <GitHub> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12 EST, yesterday · new version published — reload
-      [source(), [version(), env(), stamp(true), newVersion && reloadLink('new version published — reload')]],
+      [source(), [version(), env(), stamp(true), newVersion && reloadLink(t('new version published — reload', 'вышла новая версия — обновить'))]],
       // <GitHub> v0.3.0.3 · published 2026-Nov-16 (Mon) 23:12, yesterday · new version — reload
-      [source(), [version(), env(), stamp(false), newVersion && reloadLink('new version — reload')]],
+      [source(), [version(), env(), stamp(false), newVersion && reloadLink(t('new version — reload', 'новая версия — обновить'))]],
       // <GitHub> v0.3.0.3 · 2026-Nov-16 (Mon) 23:12 · yesterday · ↻ reload
-      [source(), [version(), when(full), when([dim(rel)]), newVersion && reloadLink('↻ reload')]],
+      [source(), [version(), when(full), when([dim(rel)]), newVersion && reloadLink(t('↻ reload', '↻ обновить'))]],
       // <GitHub> v0.3.0.3 · Nov-16 (Mon) 23:12 · yesterday · ↻
       [source(), [version(), when(short), when([dim(rel)]), newVersion && reloadLink('↻')]],
       // v0.3.0.3 · yesterday · ↻
@@ -238,7 +293,7 @@
   // A small notice in the corner of the window, so that a reader far from the footer sees it too.
   function notify() {
     if (document.querySelector('.new-version')) return;
-    var ru = (document.documentElement.lang || '').indexOf('ru') === 0;
+    var ru = isRu();
     var box = document.createElement('div');
     box.className = 'new-version';
     box.setAttribute('role', 'status');
@@ -267,7 +322,7 @@
         else if (key !== shownKey && !newVersion) { newVersion = true; render(); notify(); }
       })
       .catch(function () {
-        if (shownKey === null) { noInfo = 'Local preview (no build info)'; render(); }
+        if (shownKey === null) { noInfo = t('Local preview (no build info)', 'Локальный просмотр (нет данных о сборке)'); render(); }
       });
   }
 
@@ -305,4 +360,6 @@
 
   load();
   schedule();
+  // The home page can switch language in place.
+  document.addEventListener('krm:lang', function () { render(); });
 })();

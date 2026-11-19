@@ -32,6 +32,12 @@ Sources of https://krm-demo.org.
 - `site/icons/`, `site/favicon.ico`, `site/manifest.json` — the site icon `[(-)]` in every skin and size (the size is in each file name).
   Drawn by `scripts/make-favicons.py` (needs `rsvg-convert` and ImageMagick; run by hand, results committed).
   `site.js` swaps the tab icon, the touch icon and `theme-color` (the phone's address bar) when the skin changes.
+- Cookies (all for a year, no tracking): `skin`, `lang` (en / ru; without it, the browser's language) and `cats-off`
+  (the category chips switched off, so a new category shows up switched on).
+- Language: the EN / RU switch in the header. The home page (`<html data-i18n>`) switches in place: Russian texts sit
+  in `data-ru-text` / `data-ru-placeholder` / `data-ru-label` attributes (written by hand in `index.html`, generated from
+  the profiles by `build-home.py`); articles only in English stay English. On an article the switch opens the
+  translation, or is greyed out when there is none. The footer (`build-site-info.js`) speaks both languages.
 - `scripts/install-build-deps.sh` — installs what the build needs (Python: `markdown`, `pygments`; Node: `katex`). Run it once before a local build.
 - `site/visit-badge.js` — the "Opened this week: N" line on article pages. It reads `stats.json`, which is **not** built here:
   an hourly function in AWS writes it into the site bucket from the CloudFront access logs.

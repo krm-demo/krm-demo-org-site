@@ -67,6 +67,7 @@ TEMPLATE = """<!DOCTYPE html>
     <div class="wrap">
         <a class="brand" href="./">krm-demo</a>
         <a class="brand-section" href="./#collection">{section}</a>
+        <div id="lang-switch"></div>
         <div id="skin-switch"></div>
     </div>
 </header>
