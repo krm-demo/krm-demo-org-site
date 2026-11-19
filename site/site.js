@@ -25,12 +25,26 @@
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
+  // The tab icon, the touch icon and the phone's address-bar colour follow the skin as well.
+  var THEME_COLOR = { light: '#123a73', dark: '#0e1116', scientific: '#ffffff', pulp: '#efb81f' };
+
+  function applyIcons(next) {
+    var links = document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]');
+    for (var i = 0; i < links.length; i++) {
+      links[i].href = links[i].getAttribute('href').replace(/-(light|dark|scientific|pulp)-/, '-' + next + '-');
+    }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLOR[next]);
+  }
+
   var skin = initialSkin();
   root.setAttribute('data-skin', skin);
+  applyIcons(skin);
 
   function setSkin(next) {
     skin = next;
     root.setAttribute('data-skin', next);
+    applyIcons(next);
     writeCookie('skin', next);
     var buttons = document.querySelectorAll('.skin-switch button');
     for (var i = 0; i < buttons.length; i++) {

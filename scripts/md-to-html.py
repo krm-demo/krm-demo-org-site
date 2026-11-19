@@ -51,7 +51,13 @@ TEMPLATE = """<!DOCTYPE html>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{description}">
-{alternates}{math_head}    <link href="site.css" rel="stylesheet">
+{alternates}{math_head}    <!-- Site icon [(-)]: site.js swaps these for the current skin (drawn by scripts/make-favicons.py). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-light-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-light-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light-180x180.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#123a73">
+    <link href="site.css" rel="stylesheet">
     <script src="site.js"></script>
 </head>
 <body>
