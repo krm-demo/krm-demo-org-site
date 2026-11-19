@@ -2,8 +2,8 @@
 // The lists themselves are written by scripts/build-home.py; this only hides and shows their rows.
 //
 // Chips work like checkboxes: each one switches its category on or off, any number at once.
-// "All" is ticked when every chip is on, half-ticked when some are, empty when none are;
-// clicking it switches every chip on, or every chip off when all were on.
+// The square "all" button is pressed when every chip is on, half-pressed (aria-pressed="mixed", dashed outline)
+// when some are, and not pressed when none are; clicking it switches every chip on, or every chip off when all were on.
 // The choice is kept for a year in the cookie "cats-off": the categories switched OFF, comma-separated,
 // so that a category added later shows up switched on. Where stats.json exists, The Collection also
 // shows how many times each page was opened (the same numbers as the badge on the articles).
@@ -39,8 +39,7 @@
   function apply() {
     var cats = chosen();
     var count = chips.filter(on).length;
-    all.checked = count === chips.length;
-    all.indeterminate = count > 0 && count < chips.length;
+    all.setAttribute('aria-pressed', count === chips.length ? 'true' : count > 0 ? 'mixed' : 'false');
 
     var words = (search && search.value || '').toLowerCase().split(/\s+/).filter(Boolean);
     [['#exhibition-list', false], ['#collection-list', true]].forEach(function (pair) {
@@ -68,7 +67,7 @@
       apply();
     });
   });
-  all.addEventListener('change', function () {
+  all.addEventListener('click', function () {
     var everyOn = chips.every(on);
     chips.forEach(function (c) { c.setAttribute('aria-pressed', String(!everyOn)); });
     saveOff();

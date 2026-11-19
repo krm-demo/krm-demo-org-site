@@ -251,23 +251,40 @@ html[data-skin="scientific"] .home h2 { font-variant: small-caps; }
 [hidden] { display: none !important; }
 .empty-note { margin: 1rem 0 0; color: var(--ink-soft); font-style: italic; }
 
-/* Category chips: pressed = shown. "All" sits beside them as a plain checkbox. */
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin: 0 0 2.25rem; }
-.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* Category chips. Pressed = shown: lifted (light-to-tint gradient, faint shadow); not pressed = a soft outline.
+   The square "all" button floats in the top right corner and the chips flow around it, wrapping as text does. */
+.filters { margin: 0 0 2.25rem; }
+.filters::after { content: ""; display: block; clear: both; }
 .chip {
-    display: inline-flex; align-items: center; gap: 0.45em;
-    padding: 0.35em 0.95em; border: 1px solid var(--rule); border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 0.4em; vertical-align: middle;
+    margin: 0 0.15rem 0.5rem 0; padding: 0.25em 0.8em;
+    border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 999px;
     background: transparent; color: var(--ink-soft);
-    font: inherit; font-size: 0.95rem; cursor: pointer;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    font: inherit; font-size: 0.85rem; line-height: 1.35; white-space: nowrap; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.chip:hover { border-color: var(--link); color: var(--ink); }
-.chip[aria-pressed="true"] { background: var(--link); border-color: var(--link); color: var(--bg); }
-.chip[disabled] { opacity: 0.45; cursor: default; background: transparent; border-style: dashed; color: var(--ink-soft); }
-.chip-count { font-size: 0.8em; opacity: 0.75; font-variant-numeric: tabular-nums; }
-.all-toggle { display: inline-flex; align-items: center; gap: 0.4em; color: var(--ink-soft); cursor: pointer; user-select: none; }
-.all-toggle input { width: 1.05rem; height: 1.05rem; accent-color: var(--link); margin: 0; }
-html[data-skin="pulp"] .chip { border-width: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem; }
+.chip:hover { border-color: color-mix(in srgb, var(--link) 45%, transparent); color: var(--ink); }
+.chip[aria-pressed="true"], .chip-all[aria-pressed="true"], .chip-all[aria-pressed="mixed"] {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 88%, var(--link)), color-mix(in srgb, var(--link) 18%, var(--bg)));
+    border-color: color-mix(in srgb, var(--link) 30%, transparent);
+    color: var(--link);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 18%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+.chip[disabled] { opacity: 0.45; cursor: default; border-style: dashed; background: transparent; box-shadow: none; color: var(--ink-soft); }
+.chip-count { font-size: 0.8em; font-weight: 600; opacity: 0.65; font-variant-numeric: tabular-nums; }
+
+.chip-all {
+    float: right; display: inline-flex; align-items: center; justify-content: center;
+    width: 2.6rem; height: 2.6rem; margin: 0 0 0.4rem 1rem; padding: 0;
+    border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 0.45rem;
+    background: transparent; color: var(--link); cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.chip-all svg { width: 1.7rem; height: 1.7rem; }
+.chip-all:hover { border-color: color-mix(in srgb, var(--link) 45%, transparent); }
+.chip-all[aria-pressed="mixed"] { border-style: dashed; border-color: color-mix(in srgb, var(--link) 50%, transparent); }
+html[data-skin="pulp"] .chip { border-width: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.8rem; }
+html[data-skin="pulp"] .chip-all { border-width: 2px; }
 
 /* The Collection: compact rows, a search box above them. */
 .search { margin: 0 0 1rem; }

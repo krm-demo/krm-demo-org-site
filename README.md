@@ -177,7 +177,7 @@ Projects have a profile and a `link` instead of Markdown. A bad profile stops th
 - `icon.large` is drawn about 120×68, `icon.small` about 56×32; both may point to the same file until a simpler small drawing is worth making.
 - Current Exhibition = `featured` plus everything updated in the last 45 days, newest first, at most 5 (constants in `scripts/build-home.py`).
 - `docs/categories.json` lists the category chips in order; each has `title.en`/`title.ru` and an `icon` (not used yet).
-  Chips for empty categories are shown greyed out.
+  Chips for empty categories are shown greyed out. The square button in the top right corner (Bootstrap Icons "check-all", MIT) switches all of them; the chips flow around it.
 - `stats` is reserved. The live numbers are in `stats.json` (hourly, from the CloudFront logs) and are not committed:
   writing counters into git every hour would fill the history with noise and rebuild the preview each time.
   The Collection shows `total` from `stats.json` where it exists. `lastSeenAt` and `uniqueVisitors` need a change to the

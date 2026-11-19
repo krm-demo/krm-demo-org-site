@@ -3,8 +3,8 @@
 //
 // Language: cookie "lang"; without it, the browser's language (Russian if it is set to Russian, English otherwise).
 // - Pages marked <html data-i18n> (the home page) switch in place: every element with data-ru-text gets that text
-//   in Russian (the English is kept in data-en-text), data-ru-placeholder / data-ru-label do the same for the
-//   placeholder and aria-label, and a link's data-ru replaces its href. Other scripts hear the change through
+//   in Russian (the English is kept in data-en-text), data-ru-placeholder / data-ru-label / data-ru-title do the same
+//   for the placeholder, aria-label and title, and a link's data-ru replaces its href. Other scripts hear the change through
 //   the "krm:lang" event on document and read the language from <html lang>.
 // - Article pages are written in one language: the switch opens the translation when there is one
 //   (<link rel="alternate" hreflang>), and the other languages are shown greyed out when there is none.
@@ -79,6 +79,8 @@
       function (n) { return n.placeholder; }, function (n, v) { n.placeholder = v; });
     swap('[data-ru-label]', 'data-ru-label', 'data-en-label',
       function (n) { return n.getAttribute('aria-label'); }, function (n, v) { n.setAttribute('aria-label', v); });
+    swap('[data-ru-title]', 'data-ru-title', 'data-en-title',
+      function (n) { return n.title; }, function (n, v) { n.title = v; });
     swap('a[data-ru]', 'data-ru', 'data-en',
       function (n) { return n.getAttribute('href'); }, function (n, v) { n.setAttribute('href', v); });
     var title = document.querySelector('title');
