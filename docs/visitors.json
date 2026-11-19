@@ -1,0 +1,36 @@
+{
+  "id": "visitors",
+  "kind": "article",
+  "category": "it",
+  "languages": [
+    "en",
+    "ru"
+  ],
+  "title": {
+    "en": {
+      "full": "Who drops by while nobody's home?",
+      "medium": "Who drops by at night",
+      "short": "Visitors"
+    },
+    "ru": {
+      "full": "А кто к нам заходит, пока нас нет дома?",
+      "medium": "Кто заходит ночью",
+      "short": "Гости"
+    }
+  },
+  "summary": {
+    "en": "The first night of this site's access logs, read line by line: a forgotten tab, a crawler dressed as a 2019 iPhone in eight countries, WordPress burglars at a door that isn't there, and three real readers.",
+    "ru": "Первая ночь журналов доступа, прочитанная построчно: забытая вкладка, краулер в костюме айфона 2019 года из восьми стран, взломщики WordPress у несуществующей двери и трое настоящих читателей."
+  },
+  "icon": {
+    "large": "icons/visitors.svg",
+    "small": "icons/visitors.svg"
+  },
+  "createdAt": "2026-11-19T01:30:00-05:00",
+  "updatedAt": "2026-11-19T01:30:00-05:00",
+  "stats": {
+    "lastSeenAt": null,
+    "visitors": null,
+    "uniqueVisitors": null
+  }
+}

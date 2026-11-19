@@ -154,6 +154,21 @@ browser ──https──▶ CloudFront E3QPJMC44SZLZV ──http──▶ S3 we
     `cloudfront:CreateInvalidation` / `cloudfront:GetInvalidation` on distribution `E3QPJMC44SZLZV`. Nothing else.
 - If the release fails at **Configure AWS credentials**: CloudTrail (us-west-2) → event `AssumeRoleWithWebIdentity` shows the exact subject GitHub sent; compare it with the role's trust policy.
 
+## Who visits: where to look
+
+- **On the site:** the "Opened this week" line on each article and the counts in The Collection, from
+  [`stats.json`](https://krm-demo.org/stats.json) (rewritten every hour). These skip anything that calls itself a robot,
+  but not robots in disguise — see the article [Who drops by while nobody's home?](docs/visitors.en.md).
+- **CloudFront reports** (AWS login; last 60 days; times in UTC; robots included):
+  [CloudFront console](https://console.aws.amazon.com/cloudfront/v4/home) → *Reports & analytics* →
+  **Popular objects** (top 50 files with hits, misses, errors), **Top referrers** (sites that link here),
+  **Viewers** (devices, browsers, OS, countries), **Usage**, **Cache statistics**.
+  How each report is counted: [View CloudFront reports in the console](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/reports.html).
+- **CloudWatch metrics** (requests, bytes, error rates, near real time): CloudFront console → *Telemetry* / *Monitoring* → distribution `E3QPJMC44SZLZV`.
+- **Raw request logs:** S3 bucket [`krm-demo-org-cf-logs-560574854768`](https://s3.console.aws.amazon.com/s3/buckets/krm-demo-org-cf-logs-560574854768)
+  (us-east-1), `AWSLogs/…/CloudFront/*.gz`, one JSON line per request, nine fields, no IP address, kept 90 days.
+  Field meanings: [Standard logging reference](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html).
+
 ## Article profiles
 
 Every article or project has one profile, `docs/<id>.json`, next to its Markdown (one profile per article, shared by its translations).

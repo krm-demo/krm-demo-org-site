@@ -11,10 +11,16 @@
       "full": "krm-demo-org-site: the sources of this very site",
       "medium": "This site's sources",
       "short": "krm-demo-org-site"
+    },
+    "ru": {
+      "full": "krm-demo-org-site: исходники этого самого сайта",
+      "medium": "Исходники сайта",
+      "short": "krm-demo-org-site"
     }
   },
   "summary": {
-    "en": "Markdown in, pages out: a GitHub repository with a preview on every push to main and a release to AWS on every tag."
+    "en": "Markdown in, pages out: a GitHub repository with a preview on every push to main and a release to AWS on every tag.",
+    "ru": "Markdown на входе, страницы на выходе: репозиторий на GitHub, превью на каждый push в main и выпуск на AWS по каждому тегу."
   },
   "icon": {
     "large": "icons/krm-demo-org-site.svg",
