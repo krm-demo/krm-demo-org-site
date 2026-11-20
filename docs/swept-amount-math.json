@@ -7,26 +7,26 @@
   ],
   "title": {
     "en": {
-      "full": "Cash sweep math: swept amount per current balance",
-      "medium": "Cash sweep math",
-      "short": "Cash sweep"
+      "full": "Balances Equilibrium",
+      "medium": "Balances Equilibrium",
+      "short": "Equilibrium"
     },
     "ru": {
-      "full": "Математика cash sweep: сколько перевести при данном балансе",
-      "medium": "Математика cash sweep",
-      "short": "Cash sweep"
+      "full": "Мои балансы поют романсы",
+      "medium": "Балансы поют романсы",
+      "short": "Романсы"
     }
   },
   "summary": {
-    "en": "Thresholds, nominals and the limits of a single sweep as one piecewise function you can drag around — in thousands, or with broken axes for millions.",
-    "ru": "Пороги, номиналы и лимиты переводов как одна кусочная функция, которую можно двигать мышью, — в тысячах или с разорванными осями для миллионов."
+    "en": "My balances sing romances. One lives paycheck to paycheck and sighs whenever it gets too thin; the other sits quietly far away and grows. They have an arrangement: never too much, never too little, and no calls about pocket change. Here is that arrangement, drawn. Drag it around and see who starts singing.",
+    "ru": "Мои балансы поют романсы. Один живёт от зарплаты до зарплаты и вздыхает, когда худеет; другой тихо сидит вдалеке и толстеет. У них уговор: не слишком много, не слишком мало, и по мелочам не звонить. Вот этот уговор, нарисованный. Подвигайте его и послушайте, кто запоёт."
   },
   "icon": {
     "large": "icons/swept-amount-math.svg",
-    "small": "icons/swept-amount-math.svg"
+    "small": "icons/swept-amount-math-small.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-20T15:45:00-05:00",
+  "updatedAt": "2026-11-20T17:40:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,

@@ -1,4 +1,4 @@
-/* swept-amount-math.css — the "Cash sweep math" widget. Colours of text and lines come from the site's skin
+/* swept-amount-math.css — the "Balances Equilibrium" widget (cash sweep math). Colours of text and lines come from the site's skin
  * (site.css custom properties); the zone colours (amber / blue / teal / red) are fixed. */
 
 .sam { --sam-serif: Georgia, "Times New Roman", serif; container-type: inline-size; margin: 1.5rem 0 2rem; }

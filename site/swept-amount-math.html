@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Cash sweep math — krm-demo</title>
+    <title>Balances Equilibrium — krm-demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Swept amount per current balance: thresholds, nominals and the limits of one sweep, as an interactive graph.">
@@ -36,25 +36,34 @@
             <a href="./">&larr; Home</a> · <a href="https://github.com/krm-demo/krm-demo-org-site/tree/main/site/projects/swept-amount-math" target="_blank" rel="noopener">Source on GitHub</a>
             <span id="visit-badge"></span>
         </p>
-        <h1>Cash sweep math</h1>
-        <p class="lead">Swept amount per current balance</p>
-        <p>A cash sweep keeps the balance of an operating account between two thresholds, <i>T</i><sub>min</sub> and <i>T</i><sub>max</sub>
+        <h1>Balances Equilibrium</h1>
+        <p class="lead">or, my balances sing romances</p>
+        <p>One of my balances lives paycheck to paycheck. It sighs when it gets too thin and gets restless when it gets too fat.
+            The other one sits quietly in an investment account and grows. They agreed on a few rules long ago, and since then
+            money moves between them by itself, with no phone calls about pocket change.</p>
+        <p>The first one is the current account, a <b>DDA</b> (demand deposit account); the arrangement is a <b>cash sweep</b>.
+            It keeps the DDA balance between two thresholds, <i>T</i><sub>min</sub> and <i>T</i><sub>max</sub>
             (just <i>T</i> when they are equal). Below the lower one, money comes back from the investment account (swept in);
-            above the upper one, the excess goes there (swept out). Small deviations, up to the nominals <i>τ</i><sub>min</sub> and <i>τ</i><sub>max</sub>,
-            are not worth a transfer. And a single transfer has its limits:</p>
+            above the upper one, the excess goes there (swept out). The nominals <i>τ</i><sub>min</sub> and <i>τ</i><sub>max</sub>
+            are the smallest transfers worth making: a sweep happens only if it moves at least <i>τ</i>.
+            That is why the graph jumps at <i>T</i><sub>min</sub> − <i>τ</i><sub>min</sub> and <i>T</i><sub>max</sub> + <i>τ</i><sub>max</sub>.
+            And one transfer has its limits:</p>
         <ul>
-            <li><i>A</i> — <b>available</b>: the balance of the investment account. You cannot bring back more than is there.</li>
+            <li><i>A</i> — <b>available</b>: the balance of the investment account. You cannot bring back more than is there:
+                far below <i>T</i><sub>min</sub> the sweep takes all of <i>A</i> and is still short (swept in partial);
+                closer to it, exactly what is missing comes back (swept in full).</li>
             <li><i>L</i> — <b>limit</b>: the largest single payment the investment account accepts. Past <i>T</i><sub>max</sub> + <i>L</i>
                 one sweep is not enough, and the swept amount is not defined (overflow).</li>
         </ul>
 
         <div data-swept-amount-math data-xs="projects/swept-amount-math/swept-amount-math.svg">
-            <noscript><img src="projects/swept-amount-math/swept-amount-math.svg" alt="Cash sweep math: swept amount per current balance" style="max-width:100%"></noscript>
+            <noscript><img src="projects/swept-amount-math/swept-amount-math.svg" alt="Balances Equilibrium: swept amount per current balance" style="max-width:100%"></noscript>
         </div>
 
         <p>Real amounts are lopsided: thresholds in thousands or hundreds of thousands, <i>L</i> in millions.
             On linear axes that is a wok with a very long handle, so <b>Broken</b> cuts both axes: the pan (thresholds and nominals) stays
-            bottom left, the end of the handle (Swept out up to <i>L</i>) moves top right.
+            bottom left, the end of the handle (Swept out up to <i>L</i>) moves top right. Each panel keeps the same dollars per pixel on both of its axes, so every slope stays at 45°:
+            the handle is only drawn at a smaller scale.
             <b>Auto</b> picks the size by the width of the page; <code>?size=L</code>, <code>M</code>, <code>S</code> or <code>XS</code> in the address fixes it.</p>
     </article>
 </main>
