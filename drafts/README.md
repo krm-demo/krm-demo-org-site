@@ -7,3 +7,4 @@ When a draft is ready, it becomes an article: Markdown in `docs/`, HTML generate
 | Folder | What | Source |
 | --- | --- | --- |
 | `chebyshev/` | «От МНК до Фурье-продолжения: полиномы Чебышёва и аппроксимация на кольце» — now published as `docs/chebyshev.en.md` / `docs/chebyshev.ru.md` | E-mail written with Gemini, sent 2026-11-18. `email.html` is its HTML part as-is (only an `<html>` wrapper added); `email.txt` is its plain-text part, a slightly different and more detailed variant. `NOTES.md`: what was corrected and what still needs checking. |
+| `swept-amount-math/` | «Cash sweep math»: interactive piecewise graph of `sweptAmount` vs `currentBalance` (τ thresholds, ν nominals, σ sweep caps) — to become a page in Projects | Restored 2026-11-20 from Google Drive, where an unsaved Claude session left it. `prototype.html` is the single-file prototype as-is (KaTeX from a CDN); `NOTES.md`: the model, visual rules, interaction and the planned file layout. |
