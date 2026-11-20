@@ -1,0 +1,70 @@
+name: Release request (RELEASE file → v* tag)
+
+# Lets a release be started by a commit instead of a tag push, e.g. from a phone or a cloud session
+# that may push commits but not tags. Write the new version into the file RELEASE, commit and push to main:
+#
+#     echo v1.1.0 > RELEASE && git commit -am "Release v1.1.0" && git push
+#
+# This workflow creates the tag on that commit. The tag then starts "Release to AWS S3 (krm-demo.org)"
+# like a tag pushed by hand. The tag is pushed with the secret RELEASE_TAG_TOKEN (a personal access token
+# with Contents: read and write), because tags pushed with the built-in GITHUB_TOKEN do not start workflows.
+# An existing tag is never moved: re-using a version fails.
+
+on:
+  push:
+    branches: [main]
+    paths: [RELEASE]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-request
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the token secret
+        env:
+          TOKEN: ${{ secrets.RELEASE_TAG_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::The repository secret RELEASE_TAG_TOKEN is missing (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.RELEASE_TAG_TOKEN }}
+          fetch-depth: 0
+
+      - name: Read and check the version
+        id: version
+        run: |
+          version=$(grep -v -E '^\s*(#|$)' RELEASE | head -1 | tr -d '[:space:]')
+          if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::RELEASE must contain a version like v1.2.3, found '$version'."
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "::error::Tag $version already exists; write a new version into RELEASE."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push the tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git tag -a "$VERSION" "$GITHUB_SHA" -m "Release $VERSION (requested by ${{ github.actor }} in $GITHUB_SHA)"
+          git push origin "refs/tags/$VERSION"
+          {
+            echo "Tagged \`$GITHUB_SHA\` as **$VERSION**."
+            echo
+            echo "The release to krm-demo.org runs in [Release to AWS S3](${{ github.server_url }}/${{ github.repository }}/actions/workflows/release-aws-s3.yml)."
+          } >> "$GITHUB_STEP_SUMMARY"

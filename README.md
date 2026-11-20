@@ -100,6 +100,15 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
+Or, where only commits can be pushed (a phone, a cloud session): write the new version into the file `RELEASE`
+and push to `main`. The workflow `release-request.yml` tags that commit, and the tag starts the release as usual.
+It needs the repository secret `RELEASE_TAG_TOKEN`, a personal access token with **Contents: read and write**
+(a tag pushed with the built-in `GITHUB_TOKEN` would not start the release workflow). It never moves an existing tag.
+
+```bash
+echo v1.1.0 > RELEASE && git commit -am "Release v1.1.0" && git push
+```
+
 Progress and logs of both: the repo's **Actions** tab.
 
 ### Rolling back
