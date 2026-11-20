@@ -1,0 +1,36 @@
+{
+  "id": "jackson-vs-jq",
+  "kind": "article",
+  "category": "it",
+  "languages": [
+    "en",
+    "ru"
+  ],
+  "title": {
+    "en": {
+      "full": "How Mr. Jackson beat Ms. jq once he moved to GraalVM (and then Go showed up)",
+      "medium": "How Jackson beat jq",
+      "short": "Jackson vs jq"
+    },
+    "ru": {
+      "full": "Как мистер Джексон навалял мисс jq, переехав на GraalVM (а потом пришёл Go)",
+      "medium": "Как Джексон победил jq",
+      "short": "Джексон против jq"
+    }
+  },
+  "summary": {
+    "en": "One small Java tool that turns JSON into a table, nine runtimes, three platforms and a GitHub Actions matrix: what GraalVM is for, when Jackson beats jq, and why Go took all the medals anyway.",
+    "ru": "Одна маленькая утилита на Java, превращающая JSON в таблицу, девять рантаймов, три платформы и матрица GitHub Actions: зачем нужен GraalVM, когда Джексон обгоняет jq и почему все медали всё равно забрал Go."
+  },
+  "icon": {
+    "large": "icons/jackson-vs-jq.svg",
+    "small": "icons/jackson-vs-jq.svg"
+  },
+  "createdAt": "2026-11-19T23:05:00-05:00",
+  "updatedAt": "2026-11-19T23:05:00-05:00",
+  "stats": {
+    "lastSeenAt": null,
+    "visitors": null,
+    "uniqueVisitors": null
+  }
+}
