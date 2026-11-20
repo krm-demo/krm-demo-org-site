@@ -49,8 +49,8 @@ Sources of https://krm-demo.org.
 - `infra/visit-counter.yaml` — the CloudFormation template for that counter (log bucket, log delivery, function, schedule).
   Deployed as stack `krm-demo-org-visit-counter` in `us-east-1`. To update it after editing the template:
   `aws cloudformation deploy --region us-east-1 --stack-name krm-demo-org-visit-counter --template-file infra/visit-counter.yaml --capabilities CAPABILITY_IAM`
-- `site/projects/<name>/` — scripts, styles and pictures of an interactive project page `site/<name>.html` (hand-written, listed through
-  its profile `docs/<name>.json` like an article). `swept-amount-math/`: the "Balances Equilibrium" graph (cash sweep math); its static picture
+- `site/projects/<name>/` — scripts, styles and pictures of an interactive project page `site/<name>.<lang>.html` (hand-written, listed through
+  its profile `docs/<name>.json` like an article). `swept-amount-math/`: the "Balances Equilibrium" graph (cash sweep math; the full write-up and a JavaScript-free version served by AWS Lambda are in krm-demo/ai-plans-instr, `plan-equilib/`); its static picture
   `swept-amount-math.svg` is drawn from the widget's own code by `scripts/make-swept-amount-math-svg.js` (Node, no dependencies; run by hand, result committed).
 - `drafts/` — material being prepared; not part of the site.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.

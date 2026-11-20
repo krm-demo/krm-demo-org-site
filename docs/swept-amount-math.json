@@ -3,7 +3,8 @@
   "kind": "project",
   "category": "projects",
   "languages": [
-    "en"
+    "en",
+    "ru"
   ],
   "title": {
     "en": {
@@ -26,7 +27,7 @@
     "small": "icons/swept-amount-math-small.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-20T17:40:00-05:00",
+  "updatedAt": "2026-11-20T18:40:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,

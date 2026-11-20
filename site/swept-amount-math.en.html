@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Balances Equilibrium — krm-demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="My balances sing romances: the swept amount per current balance of a cash sweep, as an interactive graph.">
+    <link rel="alternate" hreflang="en" href="swept-amount-math.en.html">
+    <link rel="alternate" hreflang="ru" href="swept-amount-math.ru.html">
+    <!-- Site icon [(-)]: site.js swaps these for the current skin (drawn by scripts/make-favicons.py). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-light-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-light-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light-180x180.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#123a73">
+    <link href="site.css" rel="stylesheet">
+    <script src="site.js"></script>
+    <!-- KaTeX typesets the formula under the graph; without it a plain table is shown. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.js"></script>
+    <link href="projects/swept-amount-math/swept-amount-math.css" rel="stylesheet">
+    <script defer src="projects/swept-amount-math/swept-amount-math.js"></script>
+</head>
+<body>
+
+<header class="site-head">
+    <div class="wrap">
+        <a class="brand" href="./" aria-label="krm-demo"><span class="wm-br" aria-hidden="true">[(</span><span class="wm-name" aria-hidden="true">krm-demo</span><span class="wm-br" aria-hidden="true">)]</span></a>
+        <a class="brand-section" href="./#collection">The Collection</a>
+        <div id="lang-switch"></div>
+        <div id="skin-switch"></div>
+    </div>
+</header>
+
+<main class="wrap article-layout no-toc sam-page">
+    <article>
+        <p class="article-nav">
+            <a href="./">&larr; Home</a> · <a href="https://github.com/krm-demo/ai-plans-instr/blob/main/plan-equilib/README.md" target="_blank" rel="noopener">Markdown</a>
+            <span class="lang-switch">· Read in <span class="lang-badge active" lang="en" title="English">EN</span><a class="lang-badge" href="swept-amount-math.ru.html" hreflang="ru" lang="ru" title="Русский">RU</a></span>
+            <span id="visit-badge"></span>
+        </p>
+        <h1>Balances Equilibrium</h1>
+        <p class="lead">or, my balances sing romances</p>
+        <p>One of my balances lives paycheck to paycheck. It sighs when it gets too thin and gets restless when it gets too fat.
+            The other one sits quietly in an investment account and grows. They agreed on a few rules long ago, and since then
+            money moves between them by itself, with no phone calls about pocket change.</p>
+        <p>In short: a <b>cash sweep</b> keeps the balance of the current account, a <b>DDA</b> (demand deposit account),
+            between <i>T</i><sub>min</sub> and <i>T</i><sub>max</sub>. Below, money comes back from the investment account (Swept in);
+            above, the excess goes there (Swept out). A transfer smaller than the nominal <i>τ</i> is not worth making.
+            One sweep in cannot bring back more than <i>A</i>, the investment balance; one sweep out cannot send more than <i>L</i>.
+            When neither can help (Swept in zero, Overflow), the swept amount does not exist: a terminal failure ⏚.</p>
+
+        <div data-swept-amount-math data-xs="projects/swept-amount-math/swept-amount-math.svg">
+            <noscript><img src="projects/swept-amount-math/swept-amount-math.svg" alt="Balances Equilibrium: swept amount per current balance" style="max-width:100%"></noscript>
+        </div>
+
+        <p>The whole story is on GitHub, in the <a href="https://github.com/krm-demo/ai-plans-instr/blob/main/plan-equilib/README.md" target="_blank" rel="noopener">README of plan-equilib</a>:
+            every zone and its colour, why the graph jumps at the nominals, why every slope is 45° even on broken axes,
+            and the same graph without any JavaScript, drawn in Java with a finite set of hover frames and served by an
+            <a href="https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/" target="_blank" rel="noopener">AWS Lambda</a> (open it and move the mouse over the graph).</p>
+        <p><b>Auto</b> picks the size of the widget by the width of the page; <code>?size=L</code>, <code>M</code>, <code>S</code>
+            or <code>XS</code> in the address fixes it. <a href="https://github.com/krm-demo/krm-demo-org-site/tree/main/site/projects/swept-amount-math" target="_blank" rel="noopener">Source of the widget</a>.</p>
+    </article>
+</main>
+
+<footer class="site-foot">
+    <div class="wrap"><span id="build-info">loading build info…</span></div>
+</footer>
+<script src="build-site-info.js"></script>
+<script src="visit-badge.js"></script>
+
+</body>
+</html>

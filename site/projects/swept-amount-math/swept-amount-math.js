@@ -5,6 +5,7 @@
  *   A — available: the balance of the investment account, the most one sweep in can bring back;
  *   L — limit: the largest single payment into the investment account, the most one sweep out may send.
  *
+ *     y does not exist        x ≤ T_min − τ_min, when A = 0       Swept in zero (terminal failure ⏚: nothing to bring back)
  *     y = A                   x < T_min − A                       Swept in partial (all there is, still short of T_min)
  *     y = T_min − x           T_min − A ≤ x ≤ T_min − τ_min       Swept in full
  *     y = 0                   T_min − τ_min < x < T_max + τ_max   In nominal min / In range / In nominal max
@@ -35,13 +36,14 @@
   var K = 1e3, M = 1e6;
   var BLUE = '#378ADD', GRAY = '#888780', PURPLE = '#8B5CF6';   // purple: the probe, a colour no zone uses
   var ZONES = {
+    zero:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept in zero', op: 0.10, terminal: true },
     inp:   { fill: '#A8692A', ink: '#8A5418', title: 'Swept in partial', op: 0.17 },
     in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept in full',  op: 0.13 },
     nmin:  { fill: BLUE,      ink: BLUE,      title: 'In nominal min', op: 0.06 },
     range: { fill: BLUE,      ink: BLUE,      title: 'In range',       op: 0.15 },
     nmax:  { fill: BLUE,      ink: BLUE,      title: 'In nominal max', op: 0.06 },
     out:   { fill: '#1D9E75', ink: '#1D9E75', title: 'Swept out',      op: 0.13 },
-    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Overflow',       op: 0.10 }
+    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Overflow',       op: 0.10, terminal: true }
   };
 
   // Data ranges of the axes. Broken: the "pan" (thresholds and nominals, in thousands) bottom left,
@@ -53,7 +55,7 @@
     broken: { x: [[-8 * K, 104 * K], [0.4 * M, 5.6 * M]], y: [[-18 * K, 52 * K], [0.4 * M, 5.4 * M]],
               omax: { min: 0.5 * M, max: 5 * M, step: 0.1 * M, dot: 0.5 * M }, xShare: 0.72, gap: 12 }
   };
-  var IMAX = { min: 5 * K, max: 50 * K, step: 5 * K, dot: 5 * K };
+  var IMAX = { min: 0, max: 50 * K, step: 5 * K, dot: 5 * K };   // A: 0, or at least τ_min
   var DEFAULTS = { tmin: 40 * K, tmax: 60 * K, nmin: 10 * K, nmax: 15 * K, imax: 25 * K, p: 85 * K,
                    omax: { linear: 30 * K, broken: 2 * M } };
 
@@ -76,13 +78,17 @@
 
   /* ---------- the model ---------- */
 
+  // The same rules as Sweep.at() of plan-equilib (krm-demo/ai-plans-instr): a sweep moves at least τ and more than 0.
   function sweptAmountAt(x, s) {
-    if (x < s.tmin - s.imax) return { zone: 'inp', y: s.imax };
-    if (x <= s.tmin - s.nmin) return { zone: 'in', y: s.tmin - x };
+    var need = s.tmin - x, excess = x - s.tmax;
+    if (need > 0 && need >= s.nmin) {
+      if (s.imax === 0) return { zone: 'zero', y: null };
+      return need > s.imax ? { zone: 'inp', y: s.imax } : { zone: 'in', y: need };
+    }
+    if (excess > 0 && excess >= s.nmax) return excess > s.omax ? { zone: 'over', y: null } : { zone: 'out', y: excess };
     if (x < s.tmin) return { zone: 'nmin', y: 0 };
     if (x <= s.tmax) return { zone: 'range', y: 0 };
-    if (x < s.tmax + s.nmax) return { zone: 'nmax', y: 0 };
-    return x - s.tmax > s.omax ? { zone: 'over', y: null } : { zone: 'out', y: x - s.tmax };
+    return { zone: 'nmax', y: 0 };
   }
 
   function defaults(mode) {
@@ -105,9 +111,13 @@
     else v = Math.round(v / K) * K;
     if (k === 'tmin') s.tmin = clamp(v, lo + s.nmin, s.tmax);
     if (k === 'tmax') s.tmax = clamp(v, s.tmin, hi - s.nmax);
-    if (k === 'nmin') s.nmin = clamp(v, 0, Math.min(s.tmin - lo, s.imax));
+    if (k === 'nmin') s.nmin = clamp(v, 0, Math.min(s.tmin - lo, s.imax > 0 ? s.imax : IMAX.max));
     if (k === 'nmax') s.nmax = clamp(v, 0, Math.min(hi - s.tmax, s.omax));
-    if (k === 'imax') s.imax = clamp(v, ceilTo(s.nmin, IMAX), IMAX.max);
+    // A is 0 or at least τ_min: below τ_min it snaps to 0 going down, to τ_min going up from 0.
+    if (k === 'imax') {
+      var aMin = Math.max(IMAX.step, ceilTo(s.nmin, IMAX));
+      s.imax = v <= 0 ? 0 : v < s.nmin ? (s.imax === 0 ? aMin : 0) : clamp(v, aMin, IMAX.max);
+    }
     if (k === 'omax') s.omax = clamp(v, ceilTo(s.nmax, om), om.max);
     if (k === 'p') s.p = clamp(v, lo, end);
     return s;
@@ -225,7 +235,8 @@
       '<path d="M2 1L8 5L2 9" style="fill:none;stroke:' + th.soft + ';stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"/></marker></defs>';
 
     // Zones: translucent slices, one rectangle per panel, and a watermark in the widest piece.
-    var bands = [[xA, xk, 'inp'], [xk, xl, 'in'], [xl, tmin, 'nmin'], [tmin, tmax, 'range'], [tmax, xr, 'nmax'], [xr, xoc, 'out'], [xoc, xZ, 'over']];
+    var zeroA = imax === 0;   // Swept in zero: the whole sweep-in side is a terminal failure
+    var bands = (zeroA ? [[xA, xl, 'zero']] : [[xA, xk, 'inp'], [xk, xl, 'in']]).concat([[xl, tmin, 'nmin'], [tmin, tmax, 'range'], [tmax, xr, 'nmax'], [xr, xoc, 'out'], [xoc, xZ, 'over']]);
     var low = G.Y[0], wmY = (low.q0 + low.q1) / 2 - (G.Y.length > 1 ? 0 : plotH * 0.08), marks = '';
     bands.forEach(function (bd) {
       var z = bd[2], widest = null;
@@ -238,13 +249,13 @@
         G.Y.forEach(function (sy) {
           var top = Math.min(sy.q0, sy.q1), hh = Math.abs(sy.q1 - sy.q0);
           h += '<rect x="' + n2(qa) + '" y="' + n2(top) + '" width="' + n2(w) + '" height="' + n2(hh) + '" style="fill:' + Z[z].fill + ';fill-opacity:' + Z[z].op + '"/>';
-          if (z === 'over') h += '<rect x="' + n2(qa) + '" y="' + n2(top) + '" width="' + n2(w) + '" height="' + n2(hh) + '" fill="url(#' + id + '-hatch)"/>';
+          if (Z[z].terminal) h += '<rect x="' + n2(qa) + '" y="' + n2(top) + '" width="' + n2(w) + '" height="' + n2(hh) + '" fill="url(#' + id + '-hatch)"/>';
         });
       });
       if (widest && widest.w >= pf.wmMin) {
         var cx = n2(widest.x + widest.w / 2);
         marks += '<text transform="rotate(-90 ' + cx + ' ' + n2(wmY) + ')" x="' + cx + '" y="' + n2(wmY + 5) + '" text-anchor="middle" style="font-family:' + SANS +
-          ';font-size:' + pf.wm + 'px;font-weight:500;letter-spacing:1.5px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.42 : 0.34) + '">' + Z[z].title + '</text>';
+          ';font-size:' + pf.wm + 'px;font-weight:500;letter-spacing:1.5px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.42 : 0.34) + '">' + Z[z].title + (Z[z].terminal ? ' ⏚' : '') + '</text>';
       }
     });
     h += marks + '<g class="grid"></g><g class="aux"></g>';
@@ -270,7 +281,7 @@
     var xs = [{ x: xl, s: Tn + ' − τ_min', c: Z.in.ink, y: nmin, pri: 2 }, { x: tmin, s: Tn, c: th.ink, y: 0, pri: 1 },
               { x: xr, s: Tx + ' + τ_max', c: Z.out.ink, y: nmax, pri: 2 }];
     if (!eq) xs.push({ x: tmax, s: Tx, c: th.ink, y: 0, pri: 1 });
-    if (xk > xA + K) xs.push({ x: xk, s: Tn + ' − A', c: Z.in.ink, y: imax, pri: 2 });
+    if (!zeroA && xk > xA + K) xs.push({ x: xk, s: Tn + ' − A', c: Z.in.ink, y: imax, pri: 2 });
     if (visX(xo) && xo < xZ - (xZ - xA) * 0.01 && visY(omax)) xs.push({ x: xo, s: Tx + ' + L', c: Z.over.ink, y: omax, pri: 1 });
     xs = xs.filter(function (q) { return q.pri <= pf.pri; });
     xs.sort(function (a, b) { return a.x - b.x; });
@@ -287,7 +298,7 @@
 
     var ys = [{ y: nmin, s: 'τ_min', c: Z.in.ink, px: X(xl), pri: 2 }, { y: nmax, s: 'τ_max', c: Z.out.ink, px: X(xr), pri: 2 },
               { y: imax, s: 'A', c: Z.inp.ink, px: null, pri: 1 }, { y: omax, s: 'L', c: Z.over.ink, px: null, pri: 1 }];
-    ys = ys.filter(function (q) { return q.pri <= pf.pri && visY(q.y); });
+    ys = ys.filter(function (q) { return q.pri <= pf.pri && visY(q.y) && !(zeroA && (q.s === 'A' || q.s === 'τ_min')); });
     ys.forEach(function (q) { q.cy = Y(q.y); });
     ys.sort(function (a, b) { return b.cy - a.cy; });
     for (var i = 1; i < ys.length; i++) if (ys[i - 1].cy - ys[i].cy < 16 * f) ys[i].cy = ys[i - 1].cy - 16 * f;
@@ -303,31 +314,37 @@
     // The y fraction stands right of the axis with its bar on the projection, which stops at the fraction.
     var fyW = tw('T_min − T_max') + 4, fyX = ax + 8 + fyW / 2;
     if (mids) h += line(X(xc), Y(yc), sym ? fyX + fyW / 2 + 4 : ax, Y(yc), proj) + line(X(xc), Y(yc) - 5, X(xc), y0, proj);
-    h += line(RL, Y(imax), X(xl), Y(imax), stroke(Z.inp.ink, 1, '1 3'));
+    if (!zeroA) h += line(RL, Y(imax), X(xl), Y(imax), stroke(Z.inp.ink, 1, '1 3'));
     if (visY(omax)) h += line(ax, Y(omax), RR, Y(omax), stroke(Z.over.ink, 1, '1 3', 0.9));
 
     // The function. Solid: what happens; dashed in the zone's colour: what would happen without the caps and nominals.
     h += seg(tmin, 0, tmin - yA, yA, stroke(GRAY, 1, '2 4')) + seg(tmax + yA, yA, tmax, 0, stroke(GRAY, 1, '2 4'));
     h += seg(xl, nmin, tmin, 0, stroke(BLUE, 1.4, '4 3', 0.85)) + seg(tmax, 0, xr, nmax, stroke(BLUE, 1.4, '4 3', 0.85));
-    if (xk > xA) h += seg(xA, tmin - xA, xk, imax, stroke(Z.in.ink, 1.4, '4 3', 0.6));
+    if (zeroA) h += seg(xA, tmin - xA, xl, nmin, stroke(Z.zero.ink, 1.4, '4 3', 0.7));
+    else if (xk > xA) h += seg(xA, tmin - xA, xk, imax, stroke(Z.in.ink, 1.4, '4 3', 0.6));
     if (xo < xZ) h += seg(xo, omax, xZ, xZ - tmax, stroke(Z.over.ink, 1.4, '4 3', 0.75));
     var pr = sweptAmountAt(p, s);
     var W = 2.75;
-    if (xk > xA) h += seg(xA, imax, xk, imax, stroke(Z.inp.ink, W));
-    if (xl > xA) { var a0 = Math.max(xk, xA); h += seg(a0, tmin - a0, xl, nmin, stroke(Z.in.ink, W)); }
+    // Terminal failures (∄): a thick red dashed line on the x axis, under Swept in zero and under Overflow.
+    if (zeroA) h += seg(xA, 0, xl, 0, stroke(Z.zero.ink, 3, '6 4'));
+    if (xo < xZ) h += seg(xo, 0, xZ, 0, stroke(Z.over.ink, 3, '6 4'));
+    if (!zeroA && xk > xA) h += seg(xA, imax, xk, imax, stroke(Z.inp.ink, W));
+    if (!zeroA && xl > xA) { var a0 = Math.max(xk, xA); h += seg(a0, tmin - a0, xl, nmin, stroke(Z.in.ink, W)); }
     h += seg(xl, 0, xr, 0, stroke(BLUE, W));
     if (xr < xZ) h += seg(xr, nmax, xoc, xoc - tmax, stroke(Z.out.ink, W));
     // The jumps at the nominals, dashed in the colour of the sweep they belong to.
-    h += seg(xl, 0, xl, nmin, stroke(Z.in.ink, 2, '4 3')) + seg(xr, 0, xr, nmax, stroke(Z.out.ink, 2, '4 3'));
+    if (!zeroA) h += seg(xl, 0, xl, nmin, stroke(Z.in.ink, 2, '4 3'));
+    h += seg(xr, 0, xr, nmax, stroke(Z.out.ink, 2, '4 3'));
 
     ys.forEach(function (q) { h += line(ax - 3, Y(q.y), ax + 3, Y(q.y), stroke(q.c, 1.2)); });
     var dot = function (x, y, r, st) { if (visX(x) && visY(y)) h += circle(X(x), Y(y), r, st); };
     if (tmax - tmin >= 2 * K) dot(xc, yc, 3, 'fill:' + GRAY);
-    if (xk > xA) dot(xk, imax, 4.5, 'fill:' + Z.inp.ink);
+    if (!zeroA && xk > xA) dot(xk, imax, 4.5, 'fill:' + Z.inp.ink);
     if (xo < xZ) dot(xo, omax, 5, 'fill:' + Z.out.ink);
     // At a jump the sweep owns the point (filled), the zero piece starts and ends open; no jump when τ = 0.
     var open = 'fill:' + th.bg + ';stroke:' + BLUE + ';stroke-width:2';
-    if (nmin > 0) { dot(xl, 0, 5, open); dot(xl, nmin, 5, 'fill:' + Z.in.ink); } else dot(xl, 0, 5, 'fill:' + Z.in.ink);
+    if (zeroA) dot(xl, 0, 5, open);
+    else if (nmin > 0) { dot(xl, 0, 5, open); dot(xl, nmin, 5, 'fill:' + Z.in.ink); } else dot(xl, 0, 5, 'fill:' + Z.in.ink);
     if (nmax > 0) { dot(xr, 0, 5, open); dot(xr, nmax, 5, 'fill:' + Z.out.ink); } else dot(xr, 0, 5, 'fill:' + Z.out.ink);
 
     // The probe, in purple: a dashed vertical through the balance, a dashed projection onto the y axis, the point.
@@ -367,7 +384,7 @@
       // A and L rails: discrete steps, a dot per step; the handle sits on the current value.
       var rail = function (xp, v, k, c, mn, rg) {
         var r = line(xp, Y(rg.max), xp, Y(rg.min), stroke(th.rule, 2));
-        for (var t = rg.min; t <= rg.max + 1; t += rg.dot) r += circle(xp, Y(t), 1.6, 'fill:' + (t < mn ? th.rule : th.soft));
+        for (var t = rg.min; t <= rg.max + 1; t += rg.dot) r += circle(xp, Y(t), 1.6, 'fill:' + (t < mn && !(k === 'imax' && t === 0) ? th.rule : th.soft));
         var yv = Y(v);
         return r + '<g data-h="' + k + '" style="cursor:ns-resize"><rect x="' + (xp - 16) + '" y="' + n2(yv - 15) + '" width="32" height="30" fill="transparent"/>' +
           '<rect x="' + (xp - 9) + '" y="' + n2(yv - 6) + '" width="18" height="12" rx="6" style="fill:' + c + ';stroke:' + th.bg + ';stroke-width:1.5"/>' +
@@ -407,30 +424,32 @@
 
   // The rows go in the order of x; the branch of the probe's zone is in colour, the others grey.
   // A plain two-column array instead of {cases}: narrower gaps, so the formula can be set larger.
-  function rowsOf(zone, eq, T) {
+  function rowsOf(zone, eq, zeroA, T) {
     var mid = zone === 'nmin' || zone === 'range' || zone === 'nmax';
     var col = function (z) { return (z === 'range' ? mid : z === zone) ? ZONES[z].ink : GRAY; };
     var Tn = eq ? 'T' : T.min, Tx = eq ? 'T' : T.max;
-    return [['inp', 'A', 'x' + T.lt + Tn + T.minus + 'A'],
-            ['in', Tn + T.minus + 'x', Tn + T.minus + 'A' + T.le + 'x' + T.le + Tn + T.minus + T.tmin],
+    var left = zeroA ? [['zero', T.none, 'x' + T.le + Tn + T.minus + T.tmin]]
+                     : [['inp', 'A', 'x' + T.lt + Tn + T.minus + 'A'],
+                        ['in', Tn + T.minus + 'x', Tn + T.minus + 'A' + T.le + 'x' + T.le + Tn + T.minus + T.tmin]];
+    return left.concat([
             ['range', '0', Tn + T.minus + T.tmin + T.lt + 'x' + T.lt + Tx + T.plus + T.tmax],
             ['out', 'x' + T.minus + Tx, Tx + T.plus + T.tmax + T.le + 'x' + T.le + Tx + T.plus + 'L'],
-            ['over', T.none, 'x' + T.gt + Tx + T.plus + 'L']].map(function (r) { return [col(r[0]), r[1], r[2]]; });
+            ['over', T.none, 'x' + T.gt + Tx + T.plus + 'L']]).map(function (r) { return [col(r[0]), r[1], r[2]]; });
   }
   var TEX = { min: 'T_{\\min}', max: 'T_{\\max}', tmin: '\\tau_{\\min}', tmax: '\\tau_{\\max}', minus: '-', plus: '+',
               lt: '<', gt: '>', le: '\\le ', none: '\\nexists' };
   var HTML = { min: 'T<sub>min</sub>', max: 'T<sub>max</sub>', tmin: 'τ<sub>min</sub>', tmax: 'τ<sub>max</sub>',
                minus: ' − ', plus: ' + ', lt: ' &lt; ', gt: ' &gt; ', le: ' ≤ ', none: '∄' };
 
-  function formulaTex(zone, eq) {
-    return 'y(x)=\\left\\{\\begin{array}{ll}' + rowsOf(zone, eq, TEX).map(function (r) {
+  function formulaTex(zone, eq, zeroA) {
+    return 'y(x)=\\left\\{\\begin{array}{ll}' + rowsOf(zone, eq, zeroA, TEX).map(function (r) {
       return '\\textcolor{' + r[0] + '}{' + r[1] + '} & \\textcolor{' + r[0] + '}{' + r[2] + '}';
     }).join('\\\\[2pt]') + '\\end{array}\\right.';
   }
 
   // Without KaTeX: the same rows as a small HTML table.
-  function formulaHtml(zone, eq) {
-    return '<span class="sam-fx-plain"><span>y(x) =</span><span class="sam-fx-brace">{</span><table>' + rowsOf(zone, eq, HTML).map(function (r) {
+  function formulaHtml(zone, eq, zeroA) {
+    return '<span class="sam-fx-plain"><span>y(x) =</span><span class="sam-fx-brace">{</span><table>' + rowsOf(zone, eq, zeroA, HTML).map(function (r) {
       return '<tr style="color:' + r[0] + '"><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>';
     }).join('') + '</table></span>';
   }
@@ -589,17 +608,17 @@
     this.svg.innerHTML = r.svg;
 
     var z = ZONES[r.zone];
-    el.querySelector('.sam-ro').innerHTML = '<span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' + z.title + '</span>' +
+    el.querySelector('.sam-ro').innerHTML = '<span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' + z.title + (z.terminal ? ' ⏚' : '') + '</span>' +
       '<span class="sam-vi">x</span><span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
-      '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? 'not defined' : money(r.y, true)) + '</span>';
+      '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>';
 
     // The formula fills the width: set once at 10px, measured, then scaled (up to the profile's largest size).
     var fx = el.querySelector('.sam-fx'), eq = s.tmin === s.tmax, max = sweptAmountMathProfiles[this.shown].fx;
     fx.style.fontSize = '10px';
     if (typeof katex !== 'undefined') {
-      try { katex.render(formulaTex(r.zone, eq), fx, { displayMode: true, throwOnError: false }); } catch (e) { fx.innerHTML = formulaHtml(r.zone, eq); }
+      try { katex.render(formulaTex(r.zone, eq, s.imax === 0), fx, { displayMode: true, throwOnError: false }); } catch (e) { fx.innerHTML = formulaHtml(r.zone, eq, s.imax === 0); }
     } else {
-      fx.innerHTML = formulaHtml(r.zone, eq);
+      fx.innerHTML = formulaHtml(r.zone, eq, s.imax === 0);
     }
     var body = fx.querySelector('.katex') || fx.querySelector('.sam-fx-plain'), w = body ? body.getBoundingClientRect().width : 0;
     if (w > 0) fx.style.fontSize = Math.max(7.5, Math.min(max, 10 * fx.clientWidth * 0.98 / w)).toFixed(2) + 'px';
