@@ -202,7 +202,8 @@ Projects have a profile and a `link` instead of Markdown. A bad profile stops th
 
 - `title.full` is shown in Current Exhibition, `title.medium` in The Collection; `short` is for tight places (tabs, chips).
 - `icon.large` is drawn about 120×68, `icon.small` about 56×32; both may point to the same file until a simpler small drawing is worth making.
-- Current Exhibition = `featured` plus everything updated in the last 45 days, newest first, at most 5 (constants in `scripts/build-home.py`).
+- Current Exhibition = `featured` plus everything updated in the last 45 days, newest first, at most 4 (constants in `scripts/build-home.py`).
+- Publish dates: each article page shows, in small type under the navigation, when it first reached the preview and krm-demo.org (first commit of its files, first `v*` tag containing it; `scripts/publish_dates.py`); The Collection shows the same dates per entry. Both builds therefore check out the full history with tags.
 - `docs/categories.json` lists the category chips in order; each has `title.en`/`title.ru` and an `icon` (not used yet).
   Chips for empty categories are shown greyed out. The square button in the top right corner (Bootstrap Icons "check-all", MIT) switches all of them; the chips flow around it.
 - `stats` is reserved. The live numbers are in `stats.json` (hourly, from the CloudFront logs) and are not committed:

@@ -27,8 +27,10 @@ import os
 import re
 import sys
 
+import publish_dates
+
 EXHIBITION_DAYS = 45
-EXHIBITION_MAX = 5
+EXHIBITION_MAX = 4
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(HERE, "..", "docs")
 
@@ -150,6 +152,25 @@ def exhibition_html(profiles, now):
     return "\n".join(rows)
 
 
+def published_html(p):
+    """When the entry reached the preview and krm-demo.org, from git (scripts/publish_dates.py).
+    Falls back to the profile's updatedAt where git knows nothing (a project link, a shallow checkout)."""
+    d = publish_dates.dates(p["id"])
+    if not d["preview"]:
+        return f'<time datetime="{esc(p["updatedAt"])}">{p["updatedAt_dt"].strftime("%Y-%m-%d")}</time>'
+    pre = d["preview"]
+    out = (f'<time datetime="{pre.isoformat()}" title="Preview" data-ru-title="Превью"'
+           f'{ru_text(publish_dates.day(pre, "ru"), publish_dates.day(pre, "en"))}>{publish_dates.day(pre, "en")}</time>')
+    if d["release"]:
+        rel = d["release"]
+        en = f'live {publish_dates.day(rel, "en")}'
+        ru = f'на сайте с {publish_dates.day(rel, "ru")}'
+        out += f' · <span class="item-live" title="{esc(d["tag"])}"{ru_text(ru, en)}>{esc(en)}</span>'
+    else:
+        out += f' · <span class="item-live"{ru_text("только превью", "preview only")}>preview only</span>'
+    return out
+
+
 def collection_html(profiles, cat_titles):
     rows = []
     for p in profiles:
@@ -158,7 +179,7 @@ def collection_html(profiles, cat_titles):
                 <div class="item-main">
                     <span class="item-title">{title_link(p, "medium")}</span>
                     <span class="item-meta"><span class="item-cat"{ru_text(cat_titles[p["category"]]["ru"], cat_titles[p["category"]]["en"])}>{esc(cat_titles[p["category"]]["en"])}</span> ·
-                        <time datetime="{esc(p["updatedAt"])}">{p["updatedAt_dt"].strftime("%Y-%m-%d")}</time><span
+                        {published_html(p)}<span
                         class="item-visits"></span></span>
                 </div>
                 <div class="entry-langs">{lang_badges(p)}</div>

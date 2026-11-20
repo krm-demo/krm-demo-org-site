@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # history and tags: the pages show when each article reached the preview and krm-demo.org
 
       - name: Show what is being released
         run: echo "Releasing ${GITHUB_REF_NAME} (${GITHUB_SHA::7}) to s3://${S3_BUCKET}"

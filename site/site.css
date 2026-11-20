@@ -332,6 +332,7 @@ html[data-skin="pulp"] .chip-all { border-width: 2px; }
 .item-title a { color: var(--ink); font-weight: 600; }
 .item-title a:hover { color: var(--link); }
 .item-meta { font-size: 0.85rem; color: var(--ink-soft); }
+.article-dates { margin: -1.25rem 0 1.75rem; font-size: 0.75rem; color: var(--ink-soft); text-align: right; }
 .item-cat { text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.78rem; }
 .kind-badge {
     display: inline-block; margin-left: 0.3em; padding: 0.1em 0.5em; border: 1px dashed var(--ink-soft); border-radius: 0.3em;

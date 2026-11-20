@@ -36,6 +36,8 @@ import sys
 import markdown
 from markdown.extensions.toc import slugify_unicode
 
+import publish_dates
+
 REPO_URL = "https://github.com/krm-demo/krm-demo-org-site"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -83,7 +85,7 @@ TEMPLATE = """<!DOCTYPE html>
             {switcher}
             <span id="visit-badge"></span>
         </p>
-{body}
+{dates}{body}
     </article>
 {toc}</main>
 
@@ -170,6 +172,21 @@ def toc_list(tokens):
     items = "".join(f'<li><a href="#{t["id"]}">{t.get("html", t["name"])}</a>{toc_list(t["children"])}</li>'
                     for t in tokens)
     return f"<ol>{items}</ol>"
+
+
+def dates_line(name, lang):
+    """Small line under the navigation: when the article reached the preview and krm-demo.org (scripts/publish_dates.py)."""
+    d = publish_dates.dates(name)
+    if not d["preview"]:
+        return ""
+    ru = lang == "ru"
+    stamp = lambda m: f'<time datetime="{m.isoformat()}">{publish_dates.day_time(m, lang)}</time>'
+    parts = [f'{"Превью" if ru else "Preview"}: {stamp(d["preview"])}']
+    if d["release"]:
+        parts.append(f'{"на krm-demo.org" if ru else "krm-demo.org"}: {stamp(d["release"])} ({d["tag"]})')
+    else:
+        parts.append("на krm-demo.org: ещё нет" if ru else "krm-demo.org: not yet")
+    return f'        <p class="article-dates">{" · ".join(parts)}</p>\n'
 
 
 def inline_figures(body, docs_dir):
@@ -267,7 +284,7 @@ def main(src, dst):
         lang=lang, title=html.escape(title), description=description, source=src.replace(os.sep, "/"),
         repo=REPO_URL, body=body, toc=toc_html, layout_class="" if toc else " no-toc",
         section=ui["section"], home=ui["home"], source_label=ui["source"],
-        switcher=switcher, alternates=alternates, math_head=math_head)
+        switcher=switcher, alternates=alternates, math_head=math_head, dates=dates_line(name, lang))
     with open(dst, "w", encoding="utf-8") as f:
         f.write(page)
     how = "" if not formulas else (" (math: in the browser)" if in_browser else f" ({len(formulas)} formulas)")
