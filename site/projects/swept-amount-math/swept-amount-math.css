@@ -32,6 +32,13 @@
 
 .sam-fx { margin: 6px 0 12px; text-align: center; overflow: hidden; white-space: nowrap; color: var(--ink); }
 .sam-fx .katex-display { margin: 0; }
+.sam-fx .katex-display > .katex { display: inline-block; }   /* so that its width can be measured and filled */
+.sam-fx-plain { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--sam-serif); font-style: italic; }
+.sam-fx-brace { font-size: 3.6em; font-style: normal; line-height: 1; transform: scaleX(0.6); margin: 0 -0.12em; }
+.sam-fx-plain table { border-collapse: collapse; text-align: left; }
+.sam-fx-plain td { padding: 0.05em 0.35em; }
+.sam-fx-plain sub { font-style: normal; font-size: 0.7em; }
+.sam-probe { color: #8B5CF6; font-weight: 600; }
 
 .sam-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .sam--L .sam-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }

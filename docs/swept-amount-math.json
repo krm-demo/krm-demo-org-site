@@ -18,7 +18,7 @@
     }
   },
   "summary": {
-    "en": "Thresholds, nominals and sweep caps as one piecewise function you can drag around — in thousands, or with broken axes for millions.",
+    "en": "Thresholds, nominals and the limits of a single sweep as one piecewise function you can drag around — in thousands, or with broken axes for millions.",
     "ru": "Пороги, номиналы и лимиты переводов как одна кусочная функция, которую можно двигать мышью, — в тысячах или с разорванными осями для миллионов."
   },
   "icon": {
@@ -26,7 +26,7 @@
     "small": "icons/swept-amount-math.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-20T15:30:00-05:00",
+  "updatedAt": "2026-11-20T15:45:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,

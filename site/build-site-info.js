@@ -12,11 +12,6 @@
 // (CoreDateTimeUtils: "yyyy-MM-dd (EEE) HH:mm"), with the month as three letters: "2026-Nov-16 (Mon) 23:12".
 (function () {
   var el = document.getElementById('build-info');
-  if (!el) return;
-  el.style.display = 'block';
-  el.style.whiteSpace = 'nowrap';
-  el.style.overflow = 'hidden';
-  el.style.textOverflow = 'ellipsis';   // last resort if even the shortest variant is too wide
 
   var build = null;        // the build shown on the page (first build-site.json loaded)
   var shownKey = null;
@@ -155,6 +150,15 @@
     if (sec < 3600) return 15 * 1000;
     return 60 * 1000;
   }
+
+  // Shared with other scripts of the site (home.js shows "… ago" next to the new entries on the home page).
+  window.krmTime = { relative: relative, natural: natural, nextTickMs: nextTickMs };
+
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.whiteSpace = 'nowrap';
+  el.style.overflow = 'hidden';
+  el.style.textOverflow = 'ellipsis';   // last resort if even the shortest variant is too wide
 
   // ---------- DOM helpers ----------
 

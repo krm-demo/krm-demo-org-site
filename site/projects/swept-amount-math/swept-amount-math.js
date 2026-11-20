@@ -1,16 +1,20 @@
 /* swept-amount-math.js — "Cash sweep math": the swept amount per current balance, as an interactive graph.
  *
  *   x = currentBalance, y = sweptAmount (both in $).
- *   τ_min ≤ τ_max — thresholds; ν_min, ν_max — nominals; σ_in, σ_out — the largest single sweep in / out.
+ *   T_min ≤ T_max — thresholds (just T when they are equal); τ_min, τ_max — nominals;
+ *   A — available: the balance of the investment account, the most one sweep in can bring back;
+ *   L — limit: the largest single payment into the investment account, the most one sweep out may send.
  *
- *     y = min(τ_min − x, σ_in)   x < τ_min − ν_min                  Swept in
- *     y = x − τ_max              τ_max + ν_max < x ≤ τ_max + σ_out   Swept out
- *     y does not exist           x > τ_max + σ_out                   Overflow
- *     y = 0                      otherwise (In nominal min / In range / In nominal max)
+ *     y = min(T_min − x, A)   x < T_min − τ_min                   Swept in
+ *     y = 0                   T_min − τ_min ≤ x ≤ T_max + τ_max   In nominal min / In range / In nominal max
+ *     y = x − T_max           T_max + τ_max < x ≤ T_max + L       Swept out
+ *     y does not exist        x > T_max + L                       Overflow
+ *
+ * In the code the parameters keep their old names: tmin, tmax (T), nmin, nmax (τ), imax (A), omax (L).
  *
  * Markup: <div data-swept-amount-math data-xs="…/swept-amount-math.svg"></div>. Sizes L / M / S are drawn here
  * (sweptAmountMathProfiles), chosen by the width of the container; XS is the static picture from data-xs.
- * ?size=L|M|S|XS forces a size. Axes: Linear, or Broken for real-world amounts (σ_out in millions).
+ * ?size=L|M|S|XS forces a size. Axes: Linear, or Broken for real-world amounts (L in millions).
  *
  * No libraries. KaTeX, when the page has loaded it, typesets the formula; otherwise a plain-text line is shown.
  * Also loads in Node (module.exports), where scripts/make-swept-amount-math-svg.js uses it to draw the XS picture.
@@ -24,7 +28,7 @@
   'use strict';
 
   var K = 1e3, M = 1e6;
-  var BLUE = '#378ADD', GRAY = '#888780';
+  var BLUE = '#378ADD', GRAY = '#888780', PURPLE = '#8B5CF6';   // purple: the probe, a colour no zone uses
   var ZONES = {
     in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept in',       op: 0.13 },
     nmin:  { fill: BLUE,      ink: BLUE,      title: 'In nominal min', op: 0.06 },
@@ -35,7 +39,7 @@
   };
 
   // Data ranges of the axes. Broken: the "pan" (thresholds and nominals, in thousands) bottom left,
-  // the "handle" (Swept out up to σ_out, in millions) top right; share = part of the length the first piece gets.
+  // the "handle" (Swept out up to L, in millions) top right; share = part of the length the first piece gets.
   var SCALES = {
     linear: { x: [[-8 * K, 104 * K]], y: [[-18 * K, 52 * K]],
               omax: { min: 5 * K, max: 50 * K, step: 5 * K, dot: 5 * K } },
@@ -46,11 +50,12 @@
   var DEFAULTS = { tmin: 40 * K, tmax: 60 * K, nmin: 10 * K, nmax: 15 * K, imax: 25 * K, p: 85 * K,
                    omax: { linear: 30 * K, broken: 2 * M } };
 
-  // Sizes drawn by render(): width of the picture, the plot box, the rails, fonts.
+  // Sizes drawn by render(): width of the picture, the plot box, the rails, fonts, and how many labels:
+  // pri 1 — thresholds and the caps only; 2 — also the nominals and T_min − A; 3 — everything (the grey midpoints).
   var sweptAmountMathProfiles = {
-    L: { w: 760, L: 34, R: 726, T: 40, H: 360, rail: 14, font: 15, wm: 15, wmMin: 22, rowGap: 19 },
-    M: { w: 560, L: 28, R: 530, T: 34, H: 300, rail: 11, font: 14, wm: 14, wmMin: 19, rowGap: 18 },
-    S: { w: 380, L: 22, R: 358, T: 30, H: 238, rail: 9,  font: 14, wm: 14, wmMin: 17, rowGap: 18 }
+    L: { w: 760, L: 34, R: 726, T: 40, H: 360, rail: 14, font: 15, wm: 15, wmMin: 22, rowGap: 19, pri: 3, fx: 26 },
+    M: { w: 560, L: 28, R: 530, T: 34, H: 300, rail: 11, font: 14, wm: 14, wmMin: 19, rowGap: 18, pri: 2, fx: 22 },
+    S: { w: 380, L: 22, R: 358, T: 30, H: 238, rail: 9,  font: 14, wm: 14, wmMin: 17, rowGap: 18, pri: 1, fx: 18 }
   };
   var MIN_WIDTH = { L: 720, M: 520, S: 300 };   // container width (CSS px) from which a size is chosen by Auto
 
@@ -81,7 +86,7 @@
   var clamp = function (v, a, b) { return Math.min(Math.max(v, a), b); };
   var ceilTo = function (v, r) { return Math.max(r.min, Math.ceil(v / r.step) * r.step); };
 
-  // Sets one parameter and keeps the others consistent: τ_min ≤ τ_max, ν ≤ σ, everything on the "pan".
+  // Sets one parameter and keeps the others consistent: T_min ≤ T_max, τ_min ≤ A, τ_max ≤ L, everything on the "pan".
   function setParam(s, mode, k, v) {
     var sc = SCALES[mode], lo = sc.x[0][0], hi = sc.x[0][1], om = sc.omax;
     var end = sc.x[sc.x.length - 1][1];
@@ -158,7 +163,7 @@
     if (a >= K) return sign + '$' + trim1(a / K) + 'k';
     return sign + '$' + Math.round(a);
   }
-  // 'τ_min − ν_min' → italic letters with subscripts as <tspan>s.
+  // 'T_min − τ_min' → italic letters with subscripts as <tspan>s.
   function tex(s) {
     var o = '', i = 0, m, re = /([A-Za-zα-ω]+)_([a-z]+)/g, sh = false;
     while ((m = re.exec(s))) {
@@ -245,17 +250,19 @@
     h += '<text x="' + n2(ax - 5) + '" y="' + n2(y0 + 4) + '" text-anchor="end" style="' + LAB + ';fill:' + th.soft + '">0</text>';
 
     // Points of interest on the x axis (labels in rows so that they never overlap) and on the y axis.
-    var xs = [{ x: xl, s: 'τ_min − ν_min', c: Z.in.ink, y: nmin }, { x: tmin, s: 'τ_min', c: th.ink, y: 0 },
-              { x: xc, s: '(τ_min + τ_max)/2', c: GRAY, y: yc }, { x: tmax, s: 'τ_max', c: th.ink, y: 0 },
-              { x: xr, s: 'τ_max + ν_max', c: Z.out.ink, y: nmax }];
-    if (xk > xA + K) xs.push({ x: xk, s: 'τ_min − σ_in', c: Z.in.ink, y: imax });
-    if (visX(xo) && xo < xZ - (xZ - xA) * 0.01 && visY(omax)) xs.push({ x: xo, s: 'τ_max + σ_out', c: Z.over.ink, y: omax });
-    var mids = tmax - tmin >= 2 * K && !(G.X.length > 1 && pf.w < 500);   // the grey midpoint: not where there is no room
-    if (!mids) xs = xs.filter(function (q) { return q.s[0] !== '('; });
+    // pri: which sizes show the label (see sweptAmountMathProfiles); with T_min = T_max both are just T.
+    var eq = tmin === tmax, Tn = eq ? 'T' : 'T_min', Tx = eq ? 'T' : 'T_max';
+    var xs = [{ x: xl, s: Tn + ' − τ_min', c: Z.in.ink, y: nmin, pri: 2 }, { x: tmin, s: Tn, c: th.ink, y: 0, pri: 1 },
+              { x: xr, s: Tx + ' + τ_max', c: Z.out.ink, y: nmax, pri: 2 }];
+    if (!eq) xs.push({ x: tmax, s: Tx, c: th.ink, y: 0, pri: 1 });
+    if (xk > xA + K) xs.push({ x: xk, s: Tn + ' − A', c: Z.in.ink, y: imax, pri: 2 });
+    if (visX(xo) && xo < xZ - (xZ - xA) * 0.01 && visY(omax)) xs.push({ x: xo, s: Tx + ' + L', c: Z.over.ink, y: omax, pri: 1 });
+    xs = xs.filter(function (q) { return q.pri <= pf.pri; });
     xs.sort(function (a, b) { return a.x - b.x; });
+    var tw = function (t) { return t.replace(/_/g, '').length * 6.6 * f; };
     var rows = [];
     xs.forEach(function (q) {
-      q.w = (sym ? q.s.replace(/_/g, '').length * 6.6 : money(q.x).length * 7.4) * f + 4;
+      q.w = (sym ? tw(q.s) : money(q.x).length * 7.4 * f) + 4;
       q.cx = clamp(X(q.x), q.w / 2 + 2, pf.w - 2 - q.w / 2);
       var r = 0;
       while (rows[r] !== undefined && q.cx - q.w / 2 < rows[r] + 9) r++;
@@ -263,18 +270,24 @@
     });
     var rowY = function (r) { return P.B + 19 * f + r * pf.rowGap; }, H = rowY(Math.max(rows.length - 1, 0)) + 30 * f;
 
-    var ys = [{ y: nmin, s: 'ν_min', c: Z.in.ink, px: X(xl) }, { y: nmax, s: 'ν_max', c: Z.out.ink, px: X(xr) },
-              { y: imax, s: 'σ_in', c: Z.in.ink, px: null }, { y: omax, s: 'σ_out', c: Z.over.ink, px: null }];
-    if (mids) ys.push({ y: yc, s: '(τ_min − τ_max)/2', c: GRAY, px: X(xc) });
-    ys = ys.filter(function (q) { return visY(q.y); });
+    var ys = [{ y: nmin, s: 'τ_min', c: Z.in.ink, px: X(xl), pri: 2 }, { y: nmax, s: 'τ_max', c: Z.out.ink, px: X(xr), pri: 2 },
+              { y: imax, s: 'A', c: Z.in.ink, px: null, pri: 1 }, { y: omax, s: 'L', c: Z.over.ink, px: null, pri: 1 }];
+    ys = ys.filter(function (q) { return q.pri <= pf.pri && visY(q.y); });
     ys.forEach(function (q) { q.cy = Y(q.y); });
     ys.sort(function (a, b) { return b.cy - a.cy; });
     for (var i = 1; i < ys.length; i++) if (ys[i - 1].cy - ys[i].cy < 16 * f) ys[i].cy = ys[i - 1].cy - 16 * f;
+
+    // The grey midpoint (the crossing of the |x| lines): only on the largest size. Its labels are two-storey
+    // fractions: (T_min + T_max)/2 above the x axis, in the empty middle of In range; (T_min − T_max)/2 by the y axis.
+    var mids = tmax - tmin >= 2 * K && pf.pri >= 3 && visY(yc);
 
     // Projections of every point onto both axes.
     var proj = stroke(GRAY, 0.6, '1.5 3', 0.8);
     xs.forEach(function (q) { h += line(X(q.x), Y(q.y) + 5, X(q.x), rowY(q.r) - 13 * f, proj); });
     ys.forEach(function (q) { if (q.px !== null && Math.abs(q.y) > 1) h += line(q.px, Y(q.y), ax, Y(q.y), proj); });
+    // The y fraction stands right of the axis with its bar on the projection, which stops at the fraction.
+    var fyW = tw('T_min − T_max') + 4, fyX = ax + 8 + fyW / 2;
+    if (mids) h += line(X(xc), Y(yc), sym ? fyX + fyW / 2 + 4 : ax, Y(yc), proj) + line(X(xc), Y(yc) - 5, X(xc), y0, proj);
     h += line(RL, Y(imax), X(xl), Y(imax), stroke(Z.in.ink, 1, '1 3'));
     if (visY(omax)) h += line(ax, Y(omax), RR, Y(omax), stroke(Z.over.ink, 1, '1 3', 0.9));
 
@@ -284,7 +297,6 @@
     if (xk > xA) h += seg(xA, tmin - xA, xk, imax, stroke(Z.in.ink, 1.4, '4 3', 0.6));
     if (xo < xZ) h += seg(xo, omax, xZ, xZ - tmax, stroke(Z.over.ink, 1.4, '4 3', 0.75));
     var pr = sweptAmountAt(p, s);
-    if (live) h += seg(p, yA, p, yZ, stroke(Z[pr.zone].ink, 1, null, 0.55));
     var W = 2.75;
     if (xk > xA) h += seg(xA, imax, xk, imax, stroke(Z.in.ink, W));
     if (xl > xA) { var a0 = Math.max(xk, xA); h += seg(a0, tmin - a0, xl, nmin, stroke(Z.in.ink, W)); }
@@ -299,17 +311,42 @@
     dot(xl, 0, 5, 'fill:' + BLUE); dot(xr, 0, 5, 'fill:' + BLUE);
     dot(xl, nmin, 5, 'fill:' + th.bg + ';stroke:' + Z.in.ink + ';stroke-width:2');
     dot(xr, nmax, 5, 'fill:' + th.bg + ';stroke:' + Z.out.ink + ';stroke-width:2');
-    if (live && pr.y !== null) {
-      dot(p, pr.y, 6.5, 'fill:none;stroke:' + Z[pr.zone].ink + ';stroke-width:1.2');
-      dot(p, pr.y, 3, 'fill:' + Z[pr.zone].ink);
+
+    // The probe, in purple: a dashed vertical through the balance, a dashed projection onto the y axis, the point.
+    if (live) {
+      h += seg(p, yA, p, yZ, stroke(PURPLE, 1.4, '5 4', 0.9));
+      if (pr.y !== null && visY(pr.y) && visX(p)) {
+        h += line(ax, Y(pr.y), X(p), Y(pr.y), stroke(PURPLE, 1.1, '3 3', 0.8)) + line(ax - 4, Y(pr.y), ax + 4, Y(pr.y), stroke(PURPLE, 1.6));
+        dot(p, pr.y, 7, 'fill:' + PURPLE + ';fill-opacity:.18;stroke:' + PURPLE + ';stroke-width:1.4');
+        dot(p, pr.y, 3.2, 'fill:' + PURPLE);
+      }
     }
 
-    ys.forEach(function (q) { h += '<text x="' + n2(ax + 7) + '" y="' + n2(q.cy - 4) + '" style="' + LAB + ';fill:' + q.c + '">' + (sym ? tex(q.s) : money(q.y)) + '</text>'; });
-    xs.forEach(function (q) { h += '<text x="' + n2(q.cx) + '" y="' + n2(rowY(q.r)) + '" text-anchor="middle" style="' + LAB + ';fill:' + q.c + '">' + (sym ? tex(q.s) : money(q.x)) + '</text>'; });
+    var text = function (x, y, anchor, col, body) {
+      return '<text x="' + n2(x) + '" y="' + n2(y) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + ' style="' + LAB + ';fill:' + col + '">' + body + '</text>';
+    };
+    // A two-storey fraction centred on (cx, bar).
+    var frac = function (cx, bar, num, den, col) {
+      var w = tw(num) + 4;
+      return text(cx, bar - 5, 'middle', col, tex(num)) + line(cx - w / 2, bar, cx + w / 2, bar, stroke(col, 1)) +
+        text(cx, bar + pf.font + 1, 'middle', col, tex(den));
+    };
+    if (mids) {
+      var mx = X(xc), myY = Y(yc), fy = 'T_min − T_max', fx = 'T_min + T_max';
+      if (sym) {
+        h += frac(mx, y0 - pf.font - 9, fx, '2', GRAY);
+        h += frac(fyX, myY, fy, '2', GRAY);
+      } else {
+        h += text(mx, y0 - 8, 'middle', GRAY, money(xc)) + text(ax + 7, myY - 4, null, GRAY, money(yc));
+      }
+      h += line(ax - 3, myY, ax + 3, myY, stroke(GRAY, 1.2));
+    }
+    ys.forEach(function (q) { h += text(ax + 7, q.cy - 4, null, q.c, sym ? tex(q.s) : money(q.y)); });
+    xs.forEach(function (q) { h += text(q.cx, rowY(q.r), 'middle', q.c, sym ? tex(q.s) : money(q.x)); });
     h += '<text x="' + P.R + '" y="' + n2(H - 8) + '" text-anchor="end" style="' + CAP + '">Current balance, $</text>';
 
     if (live) {
-      // σ rails: discrete steps, a dot per step; the handle sits on the current value.
+      // A and L rails: discrete steps, a dot per step; the handle sits on the current value.
       var rail = function (xp, v, k, c, mn, rg) {
         var r = line(xp, Y(rg.max), xp, Y(rg.min), stroke(th.rule, 2));
         for (var t = rg.min; t <= rg.max + 1; t += rg.dot) r += circle(xp, Y(t), 1.6, 'fill:' + (t < mn ? th.rule : th.soft));
@@ -350,22 +387,41 @@
 
   /* ---------- the formula ---------- */
 
-  function formulaTex(zone) {
+  // The rows go in the order of x; the branch of the probe's zone is in colour, the others grey.
+  // A plain two-column array instead of {cases}: narrower gaps, so the formula can be set larger.
+  function formulaTex(zone, eq) {
     var mid = zone === 'nmin' || zone === 'range' || zone === 'nmax';
     var col = function (z) { return (z === 'range' ? mid : z === zone) ? ZONES[z].ink : GRAY; };
     var c = function (z, t) { return '\\textcolor{' + col(z) + '}{' + t + '}'; };
-    return 'y(x)=\\begin{cases}' +
-      c('in', '\\min\\!\\left(\\tau_{\\min}-x,\\;\\sigma_{\\mathrm{in}}\\right)') + ' & ' + c('in', 'x<\\tau_{\\min}-\\nu_{\\min}') + '\\\\[3pt]' +
-      c('out', 'x-\\tau_{\\max}') + ' & ' + c('out', '\\tau_{\\max}+\\nu_{\\max}<x\\le\\tau_{\\max}+\\sigma_{\\mathrm{out}}') + '\\\\[3pt]' +
-      c('over', '\\nexists') + ' & ' + c('over', 'x>\\tau_{\\max}+\\sigma_{\\mathrm{out}}') + '\\\\[3pt]' +
-      c('range', '0') + ' & ' + c('range', '\\text{otherwise}') + '\\end{cases}';
+    var Tn = eq ? 'T' : 'T_{\\min}', Tx = eq ? 'T' : 'T_{\\max}';
+    var row = function (z, value, cond) { return c(z, value) + ' & ' + c(z, cond); };
+    return 'y(x)=\\left\\{\\begin{array}{ll}' + [
+      row('in', '\\min(' + Tn + '-x,\\,A)', 'x<' + Tn + '-\\tau_{\\min}'),
+      row('range', '0', Tn + '-\\tau_{\\min}\\le x\\le ' + Tx + '+\\tau_{\\max}'),
+      row('out', 'x-' + Tx, Tx + '+\\tau_{\\max}<x\\le ' + Tx + '+L'),
+      row('over', '\\nexists', 'x>' + Tx + '+L')
+    ].join('\\\\[2pt]') + '\\end{array}\\right.';
+  }
+
+  // Without KaTeX: the same four rows as a small HTML table.
+  function formulaHtml(zone, eq) {
+    var mid = zone === 'nmin' || zone === 'range' || zone === 'nmax';
+    var col = function (z) { return (z === 'range' ? mid : z === zone) ? ZONES[z].ink : GRAY; };
+    var Tn = eq ? 'T' : 'T<sub>min</sub>', Tx = eq ? 'T' : 'T<sub>max</sub>';
+    var rows = [['in', 'min(' + Tn + ' − x, A)', 'x &lt; ' + Tn + ' − τ<sub>min</sub>'],
+                ['range', '0', Tn + ' − τ<sub>min</sub> ≤ x ≤ ' + Tx + ' + τ<sub>max</sub>'],
+                ['out', 'x − ' + Tx, Tx + ' + τ<sub>max</sub> &lt; x ≤ ' + Tx + ' + L'],
+                ['over', '∄', 'x &gt; ' + Tx + ' + L']];
+    return '<span class="sam-fx-plain"><span>y(x) =</span><span class="sam-fx-brace">{</span><table>' + rows.map(function (r) {
+      return '<tr style="color:' + col(r[0]) + '"><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>';
+    }).join('') + '</table></span>';
   }
 
   /* ---------- the widget ---------- */
 
-  var CHIPS = [['tmin', 'τ', 'min', 'lower threshold', 'd'], ['tmax', 'τ', 'max', 'upper threshold', 'd'],
-               ['nmin', 'ν', 'min', 'nominal below', 's'], ['nmax', 'ν', 'max', 'nominal above', 's'],
-               ['imax', 'σ', 'in', 'largest sweep in', 'b'], ['omax', 'σ', 'out', 'largest sweep out', 'b']];
+  var CHIPS = [['tmin', 'T', 'min', 'lower threshold', 'd'], ['tmax', 'T', 'max', 'upper threshold', 'd'],
+               ['nmin', 'τ', 'min', 'nominal below', 's'], ['nmax', 'τ', 'max', 'nominal above', 's'],
+               ['imax', 'A', '', 'investment balance', 'b'], ['omax', 'L', '', 'single payment limit', 'b']];
   var SIZES = ['auto', 'L', 'M', 'S', 'XS'];
   var count = 0;
 
@@ -406,12 +462,12 @@
         '<div class="sam-fx"></div>' +
         '<div class="sam-chips">' + CHIPS.map(function (c) {
           return '<div class="sam-chip"><span class="sam-sw sam-sw-' + c[4] + '" style="background:' + self.chipColour(c[0]) + '"></span>' +
-            '<div class="sam-chip-text"><div class="sam-nm">' + c[1] + '<sub>' + c[2] + '</sub> <span class="sam-mean">' + c[3] + '</span></div>' +
+            '<div class="sam-chip-text"><div class="sam-nm">' + c[1] + (c[2] ? '<sub>' + c[2] + '</sub>' : '') + ' <span class="sam-mean">' + c[3] + '</span></div>' +
             '<div class="sam-v" data-v="' + c[0] + '"></div></div>' +
             '<div class="sam-bt">' + btn('data-k="' + c[0] + '" data-d="-1" aria-label="Decrease ' + c[1] + ' ' + c[2] + '"', '−') +
             btn('data-k="' + c[0] + '" data-d="1" aria-label="Increase ' + c[1] + ' ' + c[2] + '"', '+') + '</div></div>';
         }).join('') + '</div>' +
-        '<p class="sam-hint">Diamonds move τ, the grips on top move ν, the side rails set σ. Drag anywhere else to probe a balance.</p>' +
+        '<p class="sam-hint">Diamonds move T, the grips on top move τ, the side rails set A and L. Drag anywhere else to probe a balance (purple).</p>' +
       '</div>' +
       '<img class="sam-xs" alt="Cash sweep math: swept amount per current balance" src="' + (el.getAttribute('data-xs') || '') + '" hidden>';
 
@@ -470,7 +526,7 @@
     this.omaxBy[this.mode] = this.s.omax;
     this.mode = mode;
     this.s.omax = this.omaxBy[mode];
-    setParam(this.s, mode, 'omax', this.s.omax);   // σ_out ≥ ν_max
+    setParam(this.s, mode, 'omax', this.s.omax);   // L ≥ τ_max
     setParam(this.s, mode, 'p', this.s.p);         // the probe stays on the axis
     this.draw();
   };
@@ -516,17 +572,19 @@
 
     var z = ZONES[r.zone];
     el.querySelector('.sam-ro').innerHTML = '<span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' + z.title + '</span>' +
-      '<span class="sam-vi">x</span><span class="sam-mono">' + money(s.p, true) + '</span><span>→</span>' +
-      '<span class="sam-vi">y</span><span class="sam-mono">' + (r.y === null ? 'not defined' : money(r.y, true)) + '</span>';
+      '<span class="sam-vi">x</span><span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
+      '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? 'not defined' : money(r.y, true)) + '</span>';
 
-    var fx = el.querySelector('.sam-fx'), base = this.shown === 'L' ? 15 : 13;
-    fx.style.fontSize = base + 'px';
+    // The formula fills the width: set once at 10px, measured, then scaled (up to the profile's largest size).
+    var fx = el.querySelector('.sam-fx'), eq = s.tmin === s.tmax, max = sweptAmountMathProfiles[this.shown].fx;
+    fx.style.fontSize = '10px';
     if (typeof katex !== 'undefined') {
-      try { katex.render(formulaTex(r.zone), fx, { displayMode: true, throwOnError: false }); } catch (e) { fx.textContent = ''; }
-      for (var fs = base; fx.scrollWidth > fx.clientWidth + 1 && fs > 7.5; fs -= 0.5) fx.style.fontSize = (fs - 0.5) + 'px';
+      try { katex.render(formulaTex(r.zone, eq), fx, { displayMode: true, throwOnError: false }); } catch (e) { fx.innerHTML = formulaHtml(r.zone, eq); }
     } else {
-      fx.innerHTML = '<span class="sam-vi">y = min(τ<sub>min</sub> − x, σ<sub>in</sub>), 0, x − τ<sub>max</sub> or ∄</span>';
+      fx.innerHTML = formulaHtml(r.zone, eq);
     }
+    var body = fx.querySelector('.katex') || fx.querySelector('.sam-fx-plain'), w = body ? body.getBoundingClientRect().width : 0;
+    if (w > 0) fx.style.fontSize = Math.max(7.5, Math.min(max, 10 * fx.clientWidth * 0.98 / w)).toFixed(2) + 'px';
   };
 
   function autoInit() {

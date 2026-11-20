@@ -136,7 +136,7 @@ def summary_ru(p):
     return ru_text(summary.get("ru"), summary.get("en"))
 
 
-def exhibition_html(profiles, now):
+def exhibition_html(profiles, now, cat_titles):
     cutoff = now - dt.timedelta(days=EXHIBITION_DAYS)
     chosen = [p for p in profiles if p.get("featured") or p["updatedAt_dt"] >= cutoff][:EXHIBITION_MAX]
     rows = []
@@ -147,9 +147,28 @@ def exhibition_html(profiles, now):
                     <h3>{title_link(p, "full")}</h3>
                     <p{summary_ru(p)}>{esc(p.get("summary", {}).get("en", ""))}</p>
                 </div>
-                <div class="entry-langs">{lang_badges(p)}</div>
+                <div class="entry-side">
+                    <div class="entry-langs">{lang_badges(p)}</div>
+                    <div class="entry-meta">{category_html(p, cat_titles)}{META_SEP}{published_html(p)}{META_SEP}{relative_html(p)}</div>
+                </div>
             </li>""")
     return "\n".join(rows)
+
+
+# Between the lines of .entry-meta: a line break beside the entry, " · " under it on a phone (see site.css).
+META_SEP = '<span class="meta-sep"><br></span>'
+
+
+def category_html(p, cat_titles):
+    t = cat_titles[p["category"]]
+    return f'<span class="item-cat"{ru_text(t["ru"], t["en"])}>{esc(t["en"])}</span>'
+
+
+def relative_html(p):
+    """An empty slot that home.js fills with "3 hours ago" (krmTime.relative from build-site-info.js) and keeps current."""
+    d = publish_dates.dates(p["id"])["preview"]
+    at = d.isoformat() if d else p["updatedAt"]
+    return f'<span class="rel-time" data-at="{esc(at)}"></span>'
 
 
 def published_html(p):
@@ -178,7 +197,7 @@ def collection_html(profiles, cat_titles):
                 {icon_svg(p, "small", "item-icon")}
                 <div class="item-main">
                     <span class="item-title">{title_link(p, "medium")}</span>
-                    <span class="item-meta"><span class="item-cat"{ru_text(cat_titles[p["category"]]["ru"], cat_titles[p["category"]]["en"])}>{esc(cat_titles[p["category"]]["en"])}</span> ·
+                    <span class="item-meta">{category_html(p, cat_titles)} ·
                         {published_html(p)}<span
                         class="item-visits"></span></span>
                 </div>
@@ -215,7 +234,7 @@ def main():
     with open(index_path, encoding="utf-8") as f:
         page = f.read()
     for marker, content in (("chips", chips_html(categories, profiles)),
-                            ("exhibition", exhibition_html(profiles, now)),
+                            ("exhibition", exhibition_html(profiles, now, cat_titles)),
                             ("collection", collection_html(profiles, cat_titles))):
         tag = f"<!-- build-home:{marker} -->"
         if tag not in page:

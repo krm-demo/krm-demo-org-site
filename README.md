@@ -42,6 +42,8 @@ Sources of https://krm-demo.org.
   the profiles by `build-home.py`); articles only in English stay English. On an article the switch opens the
   translation, or is greyed out when there is none. The footer (`build-site-info.js`) speaks both languages.
 - `scripts/install-build-deps.sh` — installs what the build needs (Python: `markdown`, `pygments`; Node: `katex`). Run it once before a local build.
+- `site/build-site-info.js` also shares its date wording as `window.krmTime` (`relative`, `natural`); `home.js` uses it for the
+  "3 hours ago" under the category and date of each entry in Something New.
 - `site/visit-badge.js` — the "Opened this week: N" line on article pages. It reads `stats.json`, which is **not** built here:
   an hourly function in AWS writes it into the site bucket from the CloudFront access logs.
 - `infra/visit-counter.yaml` — the CloudFormation template for that counter (log bucket, log delivery, function, schedule).

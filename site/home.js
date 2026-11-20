@@ -102,6 +102,20 @@
   }
   document.addEventListener('krm:lang', showVisits);
 
+  // "3 hours ago" next to the new entries (Something New), with the site's own calendar wording (krmTime in
+  // build-site-info.js, loaded before this script); the date itself stays in the line above. Re-checked every minute.
+  function showAges() {
+    if (!window.krmTime) return;
+    var now = new Date();
+    document.querySelectorAll('.rel-time[data-at]').forEach(function (n) {
+      var at = new Date(n.getAttribute('data-at'));
+      if (!isNaN(at)) { n.textContent = window.krmTime.relative(at, now); n.title = window.krmTime.natural(at); }
+    });
+  }
+  showAges();
+  setInterval(showAges, 60 * 1000);
+  document.addEventListener('krm:lang', showAges);
+
   fetch('stats.json', { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (s) { stats = s; showVisits(); })
