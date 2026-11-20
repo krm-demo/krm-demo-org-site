@@ -43,7 +43,7 @@ LANG_NAMES = {"en": "English", "ru": "Русский"}
 UI = {
     "en": {"home": "Home", "source": "Markdown source", "section": "The Collection", "versions": "Read in",
            "contents": "Contents", "anchor": "Link to this section"},
-    "ru": {"home": "Главная", "source": "Исходник в Markdown", "section": "Коллекция", "versions": "Читать на",
+    "ru": {"home": "Главная", "source": "Исходник в Markdown", "section": "Запасники", "versions": "Читать на",
            "contents": "Содержание", "anchor": "Ссылка на этот раздел"},
 }
 REFERENCE_HEADINGS = {"references", "литература", "источники"}
