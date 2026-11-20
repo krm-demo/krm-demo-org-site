@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Cash sweep math — krm-demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Swept amount per current balance: thresholds, nominals and sweep caps of a cash sweep, as an interactive graph.">
+    <!-- Site icon [(-)]: site.js swaps these for the current skin (drawn by scripts/make-favicons.py). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-light-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-light-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light-180x180.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#123a73">
+    <link href="site.css" rel="stylesheet">
+    <script src="site.js"></script>
+    <!-- KaTeX typesets the formula under the graph; without it a plain-text line is shown. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.js"></script>
+    <link href="projects/swept-amount-math/swept-amount-math.css" rel="stylesheet">
+    <script defer src="projects/swept-amount-math/swept-amount-math.js"></script>
+</head>
+<body>
+
+<header class="site-head">
+    <div class="wrap">
+        <a class="brand" href="./" aria-label="krm-demo"><span class="wm-br" aria-hidden="true">[(</span><span class="wm-name" aria-hidden="true">krm-demo</span><span class="wm-br" aria-hidden="true">)]</span></a>
+        <a class="brand-section" href="./#collection">The Collection</a>
+        <div id="lang-switch"></div>
+        <div id="skin-switch"></div>
+    </div>
+</header>
+
+<main class="wrap article-layout no-toc sam-page">
+    <article>
+        <p class="article-nav">
+            <a href="./">&larr; Home</a> · <a href="https://github.com/krm-demo/krm-demo-org-site/tree/main/site/projects/swept-amount-math" target="_blank" rel="noopener">Source on GitHub</a>
+            <span id="visit-badge"></span>
+        </p>
+        <h1>Cash sweep math</h1>
+        <p class="lead">Swept amount per current balance</p>
+        <p>A cash sweep keeps the balance of an operating account between two thresholds, <i>τ</i><sub>min</sub> and <i>τ</i><sub>max</sub>.
+            Below the lower one, money comes back from the investment account (swept in); above the upper one, the excess goes there (swept out).
+            Small deviations, up to the nominals <i>ν</i>, are not worth a transfer, and a single transfer is capped by <i>σ</i>:
+            <i>σ</i><sub>in</sub> by what the investment account holds, <i>σ</i><sub>out</sub> by what it may take.
+            Past <i>τ</i><sub>max</sub> + <i>σ</i><sub>out</sub> one sweep is not enough: the swept amount is not defined there (overflow).</p>
+
+        <div data-swept-amount-math data-xs="projects/swept-amount-math/swept-amount-math.svg">
+            <noscript><img src="projects/swept-amount-math/swept-amount-math.svg" alt="Cash sweep math: swept amount per current balance" style="max-width:100%"></noscript>
+        </div>
+
+        <p>Real amounts are lopsided: thresholds in thousands or hundreds of thousands, <i>σ</i><sub>out</sub> in millions.
+            On linear axes that is a wok with a very long handle, so <b>Broken</b> cuts both axes: the pan (thresholds and nominals) stays
+            bottom left, the end of the handle (Swept out up to <i>σ</i><sub>out</sub>) moves top right.
+            <b>Auto</b> picks the size by the width of the page; <code>?size=L</code>, <code>M</code>, <code>S</code> or <code>XS</code> in the address fixes it.</p>
+    </article>
+</main>
+
+<footer class="site-foot">
+    <div class="wrap"><span id="build-info">loading build info…</span></div>
+</footer>
+<script src="build-site-info.js"></script>
+<script src="visit-badge.js"></script>
+
+</body>
+</html>

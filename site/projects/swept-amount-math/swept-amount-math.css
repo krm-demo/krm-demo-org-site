@@ -1,0 +1,59 @@
+/* swept-amount-math.css — the "Cash sweep math" widget. Colours of text and lines come from the site's skin
+ * (site.css custom properties); the zone colours (amber / blue / teal / red) are fixed. */
+
+.sam { --sam-serif: Georgia, "Times New Roman", serif; container-type: inline-size; margin: 1.5rem 0 2rem; }
+.sam [hidden] { display: none !important; }
+.sam button {
+    font: inherit; font-size: 0.8125rem; color: var(--ink); background: transparent;
+    border: 1px solid var(--rule); border-radius: 8px; cursor: pointer; touch-action: manipulation;
+}
+.sam button:hover { border-color: var(--ink-soft); }
+.sam button[aria-pressed="true"] { background: var(--surface); border-color: var(--ink-soft); font-weight: 600; }
+
+.sam-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+.sam-seg { display: inline-flex; }
+.sam-seg button { border-radius: 0; margin-left: -1px; height: 30px; padding: 0 10px; }
+.sam-seg button:first-child { border-radius: 8px 0 0 8px; margin-left: 0; }
+.sam-seg button:last-child { border-radius: 0 8px 8px 0; }
+.sam-gap { flex: 1; }
+.sam-sym, .sam-rst { height: 30px; min-width: 32px; padding: 0 8px; }
+.sam--XS .sam-live-only { display: none; }
+.sam--S .sam-bar, .sam--XS .sam-bar { gap: 4px; }
+.sam--S .sam-seg button, .sam--XS .sam-seg button { padding: 0 7px; }
+
+.sam-ro { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 26px; margin: 0 0 4px;
+          font-size: 0.8125rem; color: var(--ink-soft); }
+.sam-badge { font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 8px; }
+.sam-mono { font-family: var(--font-mono); color: var(--ink); }
+.sam-vi { font-family: var(--sam-serif); font-style: italic; font-size: 0.95rem; color: var(--ink); }
+
+.sam-graph { display: block; width: 100%; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sam-xs { display: block; width: 100%; max-width: 380px; height: auto; }
+
+.sam-fx { margin: 6px 0 12px; text-align: center; overflow: hidden; white-space: nowrap; color: var(--ink); }
+.sam-fx .katex-display { margin: 0; }
+
+.sam-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sam--L .sam-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sam-chip { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px;
+            border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.sam-chip-text { min-width: 0; }
+.sam-nm { font-family: var(--sam-serif); font-style: italic; font-size: 1.05rem; line-height: 1.15; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.sam-nm sub { font-style: normal; font-size: 0.68rem; }
+.sam-mean { font-family: var(--font-body); font-style: normal; font-size: 0.72rem; color: var(--ink-soft); }
+.sam-v { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-soft); }
+.sam-bt { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.sam-bt button { width: 28px; height: 28px; padding: 0; font-size: 1rem; line-height: 1; }
+.sam-sw { width: 9px; height: 9px; flex: none; }
+.sam-sw-d { transform: rotate(45deg); }
+.sam-sw-s { border-radius: 3px; }
+.sam-sw-b { width: 12px; height: 4px; border-radius: 2px; }
+.sam--S .sam-mean { display: none; }
+
+.sam-hint { font-size: 0.75rem; color: var(--ink-soft); margin: 10px 0 0; }
+
+/* The page around the widget: wider than an article, since size L needs about 720 px. */
+.article-layout.sam-page { grid-template-columns: minmax(0, 820px); }
+.sam-page article > p, .sam-page article > ul { max-width: var(--measure); }
+.sam-page .lead { font-family: var(--sam-serif, Georgia, serif); font-style: italic; color: var(--ink-soft); margin-top: -0.5rem; }
