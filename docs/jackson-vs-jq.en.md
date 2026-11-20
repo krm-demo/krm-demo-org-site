@@ -2,19 +2,19 @@
 
 *A story about one small Java tool, nine runtimes and a benchmark that was meant to crown Java and ended up humbling everybody, Java included. Every number below comes from [benchmark run №9](https://github.com/krm-demo/ai-misc-graalvm/releases/tag/json-table-bench-9) of 2026-11-20; the code is in [krm-demo/ai-misc-graalvm](https://github.com/krm-demo/ai-misc-graalvm).*
 
-**The short version.** Jackson, the library most Java programs use to read JSON, works in a GraalVM native image without giving anything up, as long as you list in advance every class it has to read. Compiled that way, a small Java tool starts about 40 times faster than the same code on an ordinary JVM. It ties with `jq` on tiny files and beats it 3 to 5 times on bigger ones. Then Go walked in and was faster than everybody, at every size, on every platform.
+**The short version.** [Jackson](https://github.com/FasterXML/jackson){: .tech}, the library most [Java](https://dev.java/){: .tech} programs use to read and write JSON, works in a [GraalVM](https://www.graalvm.org/){: .tech} native image without giving anything up, as long as you list in advance every class it has to read. Compiled that way, a small Java tool starts about 40 times faster than the same code on an ordinary JVM. It ties with [jq](https://jqlang.org/){: .cmd}, the small command-line JSON tool that most Linux systems already have, on tiny files and beats it 3 to 5 times on bigger ones. Then [Go](https://go.dev/){: .tech} walked in and was faster than everybody, at every size, on every platform.
 
 ## 1. The question
 
-It started with a doubt. GraalVM can compile a Java program *ahead of time* into a single executable file: no JVM to start, no code to warm up, the program is simply there, like a C program. The catch is that the compiler has to see everything the program will ever use, and Jackson's whole trick is to look at your classes only at run time, through reflection. So: does Jackson survive the move, or do we have to give up half of its features?
+It started with a doubt. [GraalVM](https://www.graalvm.org/){: .tech}, a JDK from Oracle with an extra skill, can compile a Java program *ahead of time* into a single executable file: no JVM to start, no code to warm up, the program is simply there, like a C program. The catch is that the compiler has to see everything the program will ever use, and the whole trick of [Jackson](https://github.com/FasterXML/jackson){: .tech} is to look at your classes only at run time, through reflection. So: does Jackson survive the move, or do we have to give up half of its features?
 
-To find out, we wrote tests that run twice, once on an ordinary JVM and once as a native executable: records, nested records, builders, polymorphic types, generic lists, Spring Boot.
+To find out, we wrote tests that run twice, once on an ordinary JVM and once as a native executable: records, nested records, builders, polymorphic types, generic lists, [Spring Boot](https://spring.io/projects/spring-boot){: .tech}.
 
 The answer is a guest list. A native image is a party with a strict bouncer: only the classes on the list get in. Write a class down and Jackson works exactly as on the JVM. Forget one, even a small nested type travelling as somebody's plus-one, and nothing complains while the image is built. It fails only when the program runs and meets that type for the first time. So the tests that run as a native executable are not optional. The details, with links to every test, are in [Jackson in a GraalVM native image](https://github.com/krm-demo/ai-misc-graalvm/blob/main/docs/jackson-native-image.md).
 
 ## 2. The tool
 
-Tests prove that something works, but not how fast it is. For that we needed a real program, small enough to rewrite in other languages. Meet `json-table`: it reads a JSON array of objects and prints it as a table.
+Tests prove that something works, but not how fast it is. For that we needed a real program, small enough to rewrite in other languages. Meet [json-table](https://github.com/krm-demo/ai-misc-graalvm/tree/main/json-table){: .cmd}: it reads a JSON array of objects and prints it as a table.
 
 What goes in:
 
@@ -35,7 +35,7 @@ What comes out:
 
 `id`, `name` and `createdAt` are the columns the program knows about. Every other property gets a column of its own, in yellow, in the order it first appears. Nested objects are printed as small pieces of JSON inside the cell, and a missing value is simply an empty cell.
 
-It is written in Java with Jackson 3 and Picocli, prints help when called without arguments, and reports every error as one polite line instead of a forty-line stack trace. Picocli, by the way, has the same bouncer problem as Jackson and solves it neatly: it writes its own guest list while the code compiles.
+It is written in Java with [Jackson 3](https://github.com/FasterXML/jackson){: .tech} and [Picocli](https://picocli.info/){: .tech}, prints help when called without arguments, and reports every error as one polite line instead of a forty-line stack trace. Picocli, by the way, has the same bouncer problem as Jackson and solves it neatly: it writes its own guest list while the code compiles.
 
 ## 3. The race
 
@@ -43,15 +43,15 @@ Nine runners lined up:
 
 | Runner | What it is |
 | --- | --- |
-| Corretto 25, Oracle JDK 25, Zulu 25 | the same `json-table` jar on three popular JVM builds |
+| [Corretto 25](https://aws.amazon.com/corretto/){: .tech}, [Oracle JDK 25](https://www.oracle.com/java/technologies/downloads/){: .tech}, [Zulu 25](https://www.azul.com/downloads/){: .tech} | the same `json-table` jar on three popular JVM builds |
 | GraalVM 25 (JIT) | the same jar on GraalVM used as an ordinary JVM |
 | GraalVM 25 (native) | the same Java code compiled into one executable |
-| jq + bash | the same table made by one `jq` call: an 85-line script that nobody should be proud of |
-| Go, Node.js 24, Python 3.14 | the same program rewritten with each language's standard library only |
+| [jq](https://jqlang.org/){: .cmd} + [bash](https://www.gnu.org/software/bash/){: .cmd} | the same table made by one `jq` call: an 85-line script that nobody should be proud of |
+| [Go](https://go.dev/){: .tech}, [Node.js 24](https://nodejs.org/){: .tech}, [Python 3.14](https://www.python.org/){: .tech} | the same program rewritten with each language's standard library only |
 
-The rules were strict. All runners of one race run on the same machine, one after another. Before the clock starts, every runner must print byte-for-byte the same table, so nobody wins by cutting corners. The stopwatch, [hyperfine](https://github.com/sharkdp/hyperfine), times the whole process, from start to exit, and runs each one 15 times (7 on the largest file) after two warm-up laps.
+The rules were strict. All runners of one race run on the same machine, one after another. Before the clock starts, every runner must print byte-for-byte the same table, so nobody wins by cutting corners. The stopwatch, [hyperfine](https://github.com/sharkdp/hyperfine){: .cmd}, times the whole process, from start to exit, and runs each one 15 times (7 on the largest file) after two warm-up laps.
 
-The races were held by GitHub Actions. One workflow with a *matrix* starts nine jobs at once: three platforms (Linux on Intel, Linux on ARM, macOS) times three input sizes (10, 1,000 and 100,000 objects; the largest file is 24 MB). A final job collects all nine results into one report and publishes it as a GitHub release, because the results of an ordinary workflow run disappear after 90 days and releases stay.
+The races were held by [GitHub Actions](https://docs.github.com/actions){: .tech}. One workflow with a *matrix* starts nine jobs at once: three platforms (Linux on Intel, Linux on ARM, macOS) times three input sizes (10, 1,000 and 100,000 objects; the largest file is 24 MB). A final job collects all nine results into one report and publishes it as a GitHub release, because the results of an ordinary workflow run disappear after 90 days and releases stay.
 
 ## 4. The results
 
@@ -89,7 +89,7 @@ If you just need to turn some JSON into a table today, write it in Python or Nod
 
 ## 6. How it was made
 
-The whole thing was built in conversations with Claude, an AI assistant, over a few evenings. The very first session was opened in an incognito window and vanished without a trace, so for a while neither the human nor the AI could remember what the repository was for. The repository could: everything that had been pushed was still there. The lesson is old and simple, and it applies to people as much as to robots: what is not committed does not exist.
+The whole thing was built in conversations with [Claude](https://www.anthropic.com/claude){: .tech}, an AI assistant by Anthropic, over a few evenings. The very first session was opened in an incognito window and vanished without a trace, so for a while neither the human nor the AI could remember what the repository was for. The repository could: everything that had been pushed was still there. The lesson is old and simple, and it applies to people as much as to robots: what is not committed does not exist.
 
 ## References
 

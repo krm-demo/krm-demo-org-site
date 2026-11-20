@@ -16,6 +16,10 @@ What the Markdown may contain, beyond the usual:
   If Node or KaTeX is not installed, the formulas are rendered in the browser instead.
 - Code: fenced blocks with a language (```python) are highlighted with Pygments, if it is installed.
 - Proofs and long listings: <details markdown="1"><summary>Proof</summary> ... </details>.
+- Technologies: link the first mention of every library, tool or platform to its official page, and mark it
+  with a class (attr_list syntax): [Jackson](https://github.com/FasterXML/jackson){: .tech} for libraries,
+  platforms and products, [jq](https://jqlang.org/){: .cmd} for command-line tools. Links that leave the site
+  open in a new tab.
 - Figures: ![description](figures/name.svg) on its own line, followed by a caption paragraph. The SVG is drawn
   into the page so that it takes the colours of the current skin (see scripts/make-figures.py).
 
@@ -220,8 +224,14 @@ def main(src, dst):
     body = body.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
     # Links to other articles are written to the Markdown files; on the site they go to the pages.
     body = re.sub(r'href="([\w.-]+)\.md(#[^"]*)?"', lambda m: f'href="{m.group(1)}.html{m.group(2) or ""}"', body)
-    # External links open in a new tab.
-    body = re.sub(r'<a href="(https?://[^"]+)">', r'<a href="\1" target="_blank" rel="noopener">', body)
+    # External links open in a new tab; links within this site (relative, or to krm-demo.org) stay in the same one.
+    def external(m):
+        tag = m.group(0)
+        href = re.search(r'href="([^"]+)"', tag).group(1)
+        if "target=" in tag or not re.match(r"https?://", href) or re.match(r"https?://(www\.)?krm-demo\.org(/|$)", href):
+            return tag
+        return tag[:-1] + ' target="_blank" rel="noopener">'
+    body = re.sub(r"<a\s[^>]*>", external, body)
 
     # First paragraph, without markup, as the page description.
     first = re.search(r"<p>(.*?)</p>", body, re.S)
