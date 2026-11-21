@@ -18,7 +18,7 @@ Each request in the log carries the time, the address asked for, the answer, the
 
 ## 2. A tab left open since early in the week
 
-Seventy requests, half of the night, came from one Mac with Chrome. Every one of them asked for `/build.json`, and every one arrived as a pair: first the plain `http://` address, which CloudFront answers with a redirect to `https://`, then the `https://` address, which answers *404 Not Found*.
+Seventy requests, half of the night, came from one Mac with Chrome. Every one of them asked for `/build.json`, and every one arrived as a pair: first the plain `http://` address, which [CloudFront](https://aws.amazon.com/cloudfront/){: .tech} answers with a redirect to `https://`, then the `https://` address, which answers *404 Not Found*.
 
 The file was renamed to `build-site.json` on 2026-11-17. A page loaded before that day, from an `http://` link, never reloaded and kept polling the old name once a minute ([how the polling works](page-refresh.md)). The requests come in bursts — 02:14, 02:15, then 02:31 to 02:33 — because browsers put background tabs to sleep and wake them now and then.
 

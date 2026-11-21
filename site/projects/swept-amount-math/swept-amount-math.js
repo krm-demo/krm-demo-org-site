@@ -46,14 +46,20 @@
     over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Overflow',       op: 0.10, terminal: true }
   };
 
-  // Data ranges of the axes. Broken: the "pan" (thresholds and nominals, in thousands) bottom left,
-  // the "handle" (Swept out up to L, in millions) top right; xShare = part of the width the first piece gets.
-  // Heights are not set: each piece of the y axis gets the $ per pixel of the x piece of its panel, so slopes stay 45°.
+  // Data ranges of the axes. x[0] also bounds the thresholds and nominals (the "pan"); the height of the plot
+  // follows from the width, with the same $ per pixel on both axes, so every slope is 45°.
+  //
+  // Broken: still ONE scale everywhere. The pan keeps y up to y1 = 52k and x up to x1 = T_max + y1, so the
+  // Swept out line leaves it exactly through its top right corner. Then the same amount Δ is cut out of both
+  // axes, and the handle panel starts at (x1 + Δ, y1 + Δ) = (T_max + L − tail, L − tail): back on the same line.
+  // Across the cut the line goes on at 45°, as if nothing happened; only small marks on the axes tell.
+  // span: the x range the width shows (pan + handle); tail / head: how much of the line below / above L is shown.
   var SCALES = {
-    linear: { x: [[-8 * K, 104 * K]], y: [[-18 * K, 52 * K]],
+    linear: { x: [[-8 * K, 104 * K]], y: [[-18 * K, 52 * K]], end: 104 * K,
               omax: { min: 5 * K, max: 50 * K, step: 5 * K, dot: 5 * K } },
-    broken: { x: [[-8 * K, 104 * K], [0.4 * M, 5.6 * M]], y: [[-18 * K, 52 * K], [0.4 * M, 5.4 * M]],
-              omax: { min: 0.5 * M, max: 5 * M, step: 0.1 * M, dot: 0.5 * M }, xShare: 0.72, gap: 12 }
+    broken: { x: [[-8 * K, 104 * K]], y: [[-18 * K, 52 * K]], end: 6 * M,
+              omax: { min: 0.5 * M, max: 5 * M, step: 0.1 * M, dot: 0.5 * M },
+              span: 200 * K, tail: 30 * K, head: 10 * K, gap: 10 }
   };
   var IMAX = { min: 0, max: 50 * K, step: 5 * K, dot: 5 * K };   // A: 0, or at least τ_min
   var DEFAULTS = { tmin: 40 * K, tmax: 60 * K, nmin: 10 * K, nmax: 15 * K, imax: 25 * K, p: 85 * K,
@@ -78,7 +84,7 @@
 
   /* ---------- the model ---------- */
 
-  // The same rules as Sweep.at() of plan-equilib (krm-demo/ai-plans-instr): a sweep moves at least τ and more than 0.
+  // The same rules as Sweep.at() of plans-math (krm-demo/ai-plans-instr): a sweep moves at least τ and more than 0.
   function sweptAmountAt(x, s) {
     var need = s.tmin - x, excess = x - s.tmax;
     if (need > 0 && need >= s.nmin) {
@@ -104,7 +110,7 @@
   // Sets one parameter and keeps the others consistent: T_min ≤ T_max, τ_min ≤ A, τ_max ≤ L, everything on the "pan".
   function setParam(s, mode, k, v) {
     var sc = SCALES[mode], lo = sc.x[0][0], hi = sc.x[0][1], om = sc.omax;
-    var end = sc.x[sc.x.length - 1][1];
+    var end = sc.end;
     if (k === 'imax') v = Math.round(v / IMAX.step) * IMAX.step;
     else if (k === 'omax') v = Math.round(v / om.step) * om.step;
     else if (k === 'p') v = Math.round(v / 100) * 100;
@@ -123,14 +129,8 @@
     return s;
   }
 
-  /* ---------- axes: one or two pieces ---------- */
+  /* ---------- axes: one or two pieces (see SCALES) ---------- */
 
-  function axis(segs, a, b, share, gap) {
-    if (segs.length === 1) return [{ d0: segs[0][0], d1: segs[0][1], q0: a, q1: b }];
-    var dir = b > a ? 1 : -1, m = a + dir * (Math.abs(b - a) - gap) * share;
-    return [{ d0: segs[0][0], d1: segs[0][1], q0: a, q1: m },
-            { d0: segs[1][0], d1: segs[1][1], q0: m + dir * gap, q1: b }];
-  }
   function lin(sg, v) { return sg.q0 + (v - sg.d0) * (sg.q1 - sg.q0) / (sg.d1 - sg.d0); }
   function fwd(ax, v) {                       // data → pixels (outside the pieces: the nearest piece, extended)
     var sg = ax[0];
@@ -201,13 +201,23 @@
   function render(s, o) {
     var pf = o.profile, th = o.theme, sc = SCALES[o.mode], sym = o.sym, live = o.interactive, id = o.id || 'sam';
     var f = pf.font / 14;
-    var gap = sc.gap || 0, GX = axis(sc.x, pf.L, pf.R, sc.xShare, gap);
-    // Each y piece takes the $ per pixel of the x piece on the diagonal: equal scales, 45° slopes in every panel.
-    var hs = sc.y.map(function (r, j) { return (r[1] - r[0]) * (GX[j].q1 - GX[j].q0) / (GX[j].d1 - GX[j].d0); });
-    var plotH = hs.reduce(function (a, b) { return a + b; }, 0) + gap * (hs.length - 1);
+    var gap = 0, GX, GY, plotH, x0 = sc.x[0][0], y0d = sc.y[0][0], y1 = sc.y[0][1];
+    if (sc.span) {
+      // Broken (see SCALES): one scale k; the pan ends at x1 = T_max + y1, the handle starts at T_max + L − tail.
+      gap = sc.gap;
+      var k = (pf.R - pf.L - gap) / sc.span, x1 = s.tmax + y1, u = sc.span - (x1 - x0), e = s.tmax + s.omax;
+      var lowW = (x1 - x0) * k, lowH = (y1 - y0d) * k, upH = (sc.tail + sc.head) * k;
+      plotH = lowH + gap + upH;
+      GX = [{ d0: x0, d1: x1, q0: pf.L, q1: pf.L + lowW },
+            { d0: e - sc.tail, d1: e - sc.tail + u, q0: pf.L + lowW + gap, q1: pf.R }];
+      GY = [{ d0: y0d, d1: y1, q0: pf.T + plotH, q1: pf.T + plotH - lowH },
+            { d0: s.omax - sc.tail, d1: s.omax + sc.head, q0: pf.T + upH, q1: pf.T }];
+    } else {
+      GX = [{ d0: x0, d1: sc.x[0][1], q0: pf.L, q1: pf.R }];
+      plotH = (y1 - y0d) * (pf.R - pf.L) / (sc.x[0][1] - x0);
+      GY = [{ d0: y0d, d1: y1, q0: pf.T + plotH, q1: pf.T }];
+    }
     var P = { L: pf.L, R: pf.R, T: pf.T, B: pf.T + plotH }, RL = pf.rail, RR = pf.w - pf.rail;
-    var GY = [{ d0: sc.y[0][0], d1: sc.y[0][1], q0: P.B, q1: P.B - hs[0] }];
-    if (sc.y.length > 1) GY.push({ d0: sc.y[1][0], d1: sc.y[1][1], q0: P.B - hs[0] - gap, q1: P.T });
     var G = { X: GX, Y: GY };
     var X = function (v) { return fwd(G.X, v); }, Y = function (v) { return fwd(G.Y, v); };
     var visX = function (v) { return visible(G.X, v); }, visY = function (v) { return visible(G.Y, v); };
@@ -224,7 +234,7 @@
 
     var tmin = s.tmin, tmax = s.tmax, nmin = s.nmin, nmax = s.nmax, imax = s.imax, omax = s.omax, p = s.p;
     var xl = tmin - nmin, xr = tmax + nmax, xk = tmin - imax, xo = tmax + omax, xc = (tmin + tmax) / 2, yc = (tmin - tmax) / 2;
-    var xA = sc.x[0][0], xZ = sc.x[sc.x.length - 1][1], yA = sc.y[0][0], yZ = sc.y[sc.y.length - 1][1];
+    var xA = GX[0].d0, xZ = GX[GX.length - 1].d1, yA = GY[0].d0, yZ = GY[GY.length - 1].d1;
     var y0 = Y(0), ax = X(0), xoc = Math.min(xo, xZ), Z = ZONES;
     var LAB = 'font-family:' + SERIF + ';font-style:italic;font-size:' + pf.font + 'px';
     var CAP = 'font-family:' + SERIF + ';font-style:italic;font-size:' + Math.round(13 * f) + 'px;fill:' + th.soft;
@@ -237,6 +247,16 @@
     // Zones: translucent slices, one rectangle per panel, and a watermark in the widest piece.
     var zeroA = imax === 0;   // Swept in zero: the whole sweep-in side is a terminal failure
     var bands = (zeroA ? [[xA, xl, 'zero']] : [[xA, xk, 'inp'], [xk, xl, 'in']]).concat([[xl, tmin, 'nmin'], [tmin, tmax, 'range'], [tmax, xr, 'nmax'], [xr, xoc, 'out'], [xoc, xZ, 'over']]);
+    // Bands go the full height of the plot, across the cut of the y axis; the cut of the x axis is filled too
+    // when the same zone goes on behind it, so the cut stays unobtrusive.
+    var band = function (qa, w, z) {
+      var r = '<rect x="' + n2(qa) + '" y="' + n2(P.T) + '" width="' + n2(w) + '" height="' + n2(plotH) + '"';
+      return r + ' style="fill:' + Z[z].fill + ';fill-opacity:' + Z[z].op + '"/>' + (Z[z].terminal ? r + ' fill="url(#' + id + '-hatch)"/>' : '');
+    };
+    if (GX.length > 1) {
+      var zl = sweptAmountAt(GX[0].d1, s).zone, zr = sweptAmountAt(GX[1].d0, s).zone;
+      if (zl === zr) h += band(GX[0].q1, gap, zl);
+    }
     var low = G.Y[0], wmY = (low.q0 + low.q1) / 2 - (G.Y.length > 1 ? 0 : plotH * 0.08), marks = '';
     bands.forEach(function (bd) {
       var z = bd[2], widest = null;
@@ -246,11 +266,7 @@
         var qa = lin(sx, a), w = lin(sx, b) - qa;
         if (w <= 0.5) return;
         if (!widest || w > widest.w) widest = { x: qa, w: w };
-        G.Y.forEach(function (sy) {
-          var top = Math.min(sy.q0, sy.q1), hh = Math.abs(sy.q1 - sy.q0);
-          h += '<rect x="' + n2(qa) + '" y="' + n2(top) + '" width="' + n2(w) + '" height="' + n2(hh) + '" style="fill:' + Z[z].fill + ';fill-opacity:' + Z[z].op + '"/>';
-          if (Z[z].terminal) h += '<rect x="' + n2(qa) + '" y="' + n2(top) + '" width="' + n2(w) + '" height="' + n2(hh) + '" fill="url(#' + id + '-hatch)"/>';
-        });
+        h += band(qa, w, z);
       });
       if (widest && widest.w >= pf.wmMin) {
         var cx = n2(widest.x + widest.w / 2);
@@ -262,17 +278,15 @@
 
     // Axes, with a break mark where a piece ends.
     var axSt = stroke(th.soft, 1);
-    G.X.forEach(function (sx, i) {
-      var last = i === G.X.length - 1, a = i === 0 ? P.L : sx.q0, b = last ? P.R + 6 : sx.q1;
-      h += '<line x1="' + n2(a) + '" y1="' + n2(y0) + '" x2="' + n2(b) + '" y2="' + n2(y0) + '" style="' + axSt + '"' + (last ? ' marker-end="url(#' + id + '-arrow)"' : '') + '/>';
-      if (!last) [sx.q1, G.X[i + 1].q0].forEach(function (q) { h += line(q - 3, y0 + 5, q + 3, y0 - 5, axSt); });
-    });
-    G.Y.forEach(function (sy, i) {
-      var last = i === G.Y.length - 1, a = i === 0 ? P.B : sy.q0, b = last ? P.T - 6 : sy.q1;
-      h += '<line x1="' + n2(ax) + '" y1="' + n2(a) + '" x2="' + n2(ax) + '" y2="' + n2(b) + '" style="' + axSt + '"' + (last ? ' marker-end="url(#' + id + '-arrow)"' : '') + '/>';
-      if (!last) [sy.q1, G.Y[i + 1].q0].forEach(function (q) { h += line(ax - 5, q + 3, ax + 5, q - 3, axSt); });
-    });
-    h += '<text x="' + n2(ax + 8) + '" y="' + (P.T - 12) + '" style="' + CAP + '">Swept amount, $</text>';
+    h += '<line x1="' + P.L + '" y1="' + n2(y0) + '" x2="' + (P.R + 6) + '" y2="' + n2(y0) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
+    h += '<line x1="' + n2(ax) + '" y1="' + n2(P.B) + '" x2="' + n2(ax) + '" y2="' + (P.T - 6) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
+    if (gap) {
+      // The cut: two short slanted strokes across each axis, in the middle of the gap.
+      var cq = GX[0].q1 + gap / 2, cy = GY[0].q1 - gap / 2, br = stroke(th.soft, 1, null, 0.8);
+      h += line(cq - 4, y0 + 4, cq - 1, y0 - 4, br) + line(cq + 1, y0 + 4, cq + 4, y0 - 4, br);
+      h += line(ax - 4, cy + 1, ax + 4, cy - 2, br) + line(ax - 4, cy + 4, ax + 4, cy + 1, br);
+    }
+    h += '<text x="' + n2(ax + 8) + '" y="' + (P.T - 12) + '" style="' + CAP + '">Swept amount, <tspan style="fill:' + PURPLE + ';font-style:normal;font-weight:700">$</tspan></text>';
     h += '<text x="' + n2(ax - 5) + '" y="' + n2(y0 + 4) + '" text-anchor="end" style="' + LAB + ';fill:' + th.soft + '">0</text>';
 
     // Points of interest on the x axis (labels in rows so that they never overlap) and on the y axis.
@@ -332,6 +346,8 @@
     if (!zeroA && xl > xA) { var a0 = Math.max(xk, xA); h += seg(a0, tmin - a0, xl, nmin, stroke(Z.in.ink, W)); }
     h += seg(xl, 0, xr, 0, stroke(BLUE, W));
     if (xr < xZ) h += seg(xr, nmax, xoc, xoc - tmax, stroke(Z.out.ink, W));
+    // Across the cut Swept out goes straight on: from the corner of the pan to the corner of the handle, 45°.
+    if (gap && xr < GX[0].d1) h += line(GX[0].q1, GY[0].q1, GX[1].q0, GY[1].q0, stroke(Z.out.ink, W));
     // The jumps at the nominals, dashed in the colour of the sweep they belong to.
     if (!zeroA) h += seg(xl, 0, xl, nmin, stroke(Z.in.ink, 2, '4 3'));
     h += seg(xr, 0, xr, nmax, stroke(Z.out.ink, 2, '4 3'));
@@ -349,7 +365,7 @@
 
     // The probe, in purple: a dashed vertical through the balance, a dashed projection onto the y axis, the point.
     if (live) {
-      h += seg(p, yA, p, yZ, stroke(PURPLE, 1.4, '5 4', 0.9));
+      if (visX(p)) h += line(X(p), P.B, X(p), P.T, stroke(PURPLE, 1.4, '5 4', 0.9));
       if (pr.y !== null && visY(pr.y) && visX(p)) {
         h += line(ax, Y(pr.y), X(p), Y(pr.y), stroke(PURPLE, 1.1, '3 3', 0.8)) + line(ax - 4, Y(pr.y), ax + 4, Y(pr.y), stroke(PURPLE, 1.6));
         dot(p, pr.y, 7, 'fill:' + PURPLE + ';fill-opacity:.18;stroke:' + PURPLE + ';stroke-width:1.4');
@@ -382,20 +398,24 @@
 
     if (live) {
       // A and L rails: discrete steps, a dot per step; the handle sits on the current value.
-      var rail = function (xp, v, k, c, mn, rg) {
-        var r = line(xp, Y(rg.max), xp, Y(rg.min), stroke(th.rule, 2));
-        for (var t = rg.min; t <= rg.max + 1; t += rg.dot) r += circle(xp, Y(t), 1.6, 'fill:' + (t < mn && !(k === 'imax' && t === 0) ? th.rule : th.soft));
+      var rail = function (xp, v, k, c, mn, rg, jog) {
+        // jog: on broken axes the handle of L stays where L is drawn (the handle panel follows L); dragging it
+        // up or down turns L like a knob, the whole range over twice the height of that panel.
+        var r = jog ? line(xp, jog.q0, xp, jog.q1, stroke(th.rule, 2)) + line(xp - 3, jog.q1, xp + 3, jog.q1, stroke(th.rule, 2)) +
+                      line(xp - 3, jog.q0, xp + 3, jog.q0, stroke(th.rule, 2))
+                    : line(xp, Y(rg.max), xp, Y(rg.min), stroke(th.rule, 2));
+        if (!jog) for (var t = rg.min; t <= rg.max + 1; t += rg.dot) r += circle(xp, Y(t), 1.6, 'fill:' + (t < mn && !(k === 'imax' && t === 0) ? th.rule : th.soft));
         var yv = Y(v);
         return r + '<g data-h="' + k + '" style="cursor:ns-resize"><rect x="' + (xp - 16) + '" y="' + n2(yv - 15) + '" width="32" height="30" fill="transparent"/>' +
           '<rect x="' + (xp - 9) + '" y="' + n2(yv - 6) + '" width="18" height="12" rx="6" style="fill:' + c + ';stroke:' + th.bg + ';stroke-width:1.5"/>' +
           line(xp - 4, yv - 2, xp + 4, yv - 2, 'stroke:#fff;stroke-width:1') + line(xp - 4, yv + 2, xp + 4, yv + 2, 'stroke:#fff;stroke-width:1') + '</g>';
       };
       h += rail(RL, imax, 'imax', Z.inp.ink, ceilTo(nmin, IMAX), IMAX);
-      h += rail(RR, omax, 'omax', Z.over.ink, ceilTo(nmax, sc.omax), sc.omax);
+      h += rail(RR, omax, 'omax', Z.over.ink, ceilTo(nmax, sc.omax), sc.omax, gap ? { q0: GY[1].q0, q1: P.T } : null);
     }
     // Borders of the nominals: dotted verticals in the colour of the neighbouring zone (with a grip on top when live).
     var grip = function (x, k, c) {
-      var g = seg(x, yA, x, yZ, stroke(c, 1.6, '0 4.5', 0.8)), q = X(x);
+      var q = X(x), g = line(q, P.B, q, P.T, stroke(c, 1.6, '0 4.5', 0.8));
       if (!live) return g;
       return '<g data-h="' + k + '" style="cursor:ew-resize"><rect x="' + n2(q - 16) + '" y="' + (P.T - 16) + '" width="32" height="34" fill="transparent"/>' + g +
         '<rect x="' + n2(q - 6) + '" y="' + (P.T - 11) + '" width="12" height="22" rx="6" style="fill:' + c + ';stroke:' + th.bg + ';stroke-width:1.5"/>' +
@@ -410,7 +430,8 @@
       };
       h += dia(tmin, 'tmin') + dia(tmax, 'tmax');
     }
-    return { svg: h, width: pf.w, height: Math.ceil(H), G: G, zone: pr.zone, y: pr.y };
+    return { svg: h, width: pf.w, height: Math.ceil(H), G: G, zone: pr.zone, y: pr.y,
+             jog: gap ? (sc.omax.max - sc.omax.min) / (2 * (GY[1].q0 - P.T)) : 0 };
   }
 
   // The static picture (size XS and the noscript fallback): default parameters, linear axes, no handles.
@@ -540,11 +561,15 @@
       if (drag === 'tmin' || drag === 'tmax' || drag === 'p') self.set(drag, x);
       else if (drag === 'nmin') self.set('nmin', self.s.tmin - x);
       else if (drag === 'nmax') self.set('nmax', x - self.s.tmax);
+      else if (drag === 'omax' && self.jog) self.set('omax', jog.v + (jog.y - m.y) * self.jog);   // a knob, see render()
       else if (drag === 'imax' || drag === 'omax') self.set(drag, y);
     };
+    var jog = null;
     this.svg.addEventListener('pointerdown', function (e) {
       var g = e.target.closest('[data-h]');
       drag = g ? g.getAttribute('data-h') : 'p';
+      pt.x = e.clientX; pt.y = e.clientY;
+      jog = { y: pt.matrixTransform(self.svg.getScreenCTM().inverse()).y, v: self.s.omax };
       self.svg.setPointerCapture(e.pointerId);
       move(e);
     });
@@ -603,14 +628,23 @@
     this.drawn = true;
 
     var r = render(s, { profile: sweptAmountMathProfiles[this.shown], theme: THEMES.page, mode: this.mode, sym: this.sym, interactive: true, id: this.id });
-    this.G = r.G;
+    this.G = r.G; this.jog = r.jog;
     this.svg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
     this.svg.innerHTML = r.svg;
 
     var z = ZONES[r.zone];
-    el.querySelector('.sam-ro').innerHTML = '<span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' + z.title + (z.terminal ? ' ⏚' : '') + '</span>' +
-      '<span class="sam-vi">x</span><span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
-      '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>';
+    // Two status lines: the threshold as an interval with its nominals, then what the probed balance means.
+    var dir = r.zone === 'in' || r.zone === 'inp' ? 'from Investment-Account to DDA'
+            : r.zone === 'out' ? 'from DDA to Investment-Account' : z.terminal ? '' : 'nothing to transfer';
+    el.querySelector('.sam-ro').innerHTML =
+      '<div class="sam-line"><span class="sam-lab">Threshold:</span><span class="sam-mono">−' + money(s.nmin) + ' [' + money(s.tmin) +
+        ' ; ' + money(s.tmax) + '] +' + money(s.nmax) + '</span><span class="sam-mono sam-alt">(' + money(s.tmin - s.nmin) + ' ; ' +
+        money(s.tmax + s.nmax) + ')</span></div>' +
+      '<div class="sam-line"><span class="sam-lab">Sweep Status:</span><span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' +
+        z.title + (z.terminal ? ' ⏚' : '') + '</span>' +
+        '<span class="sam-vi">x</span><span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
+        '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>' +
+        (dir ? '<span class="sam-dir">' + dir + '</span>' : '') + '</div>';
 
     // The formula fills the width: set once at 10px, measured, then scaled (up to the profile's largest size).
     var fx = el.querySelector('.sam-fx'), eq = s.tmin === s.tmax, max = sweptAmountMathProfiles[this.shown].fx;

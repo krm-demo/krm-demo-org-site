@@ -489,7 +489,7 @@ article .katex-display { margin: 1rem 0; padding: 0.15rem 0; overflow-x: auto; o
 /* Technologies named in an article (see scripts/md-to-html.py): a library, platform or product, and a command-line tool. */
 article a.tech { color: var(--accent); font-weight: 600; }
 article a.cmd { font-family: var(--font-mono); font-size: 0.9em; color: var(--accent); background: var(--surface); padding: 0.05em 0.3em; border-radius: 0.25em; }
-article a.tech:hover, article a.cmd:hover { color: var(--link-hover); text-decoration: underline; }
+article a.tech:hover, article a.cmd:hover { color: var(--link-hover); }   /* no underline: it breaks the line of the text */
 article figure { margin: 1.75rem 0 0.5rem; }
 article figure svg { display: block; width: 100%; height: auto; max-width: 40rem; margin: 0 auto; font-family: var(--font-body); }
 article figure + p { margin-bottom: 1.75rem; font-size: 0.875em; line-height: 1.5; color: var(--ink-soft); text-align: left; }

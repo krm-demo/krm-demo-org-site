@@ -21,8 +21,13 @@
 .sam--S .sam-bar, .sam--XS .sam-bar { gap: 4px; }
 .sam--S .sam-seg button, .sam--XS .sam-seg button { padding: 0 7px; }
 
-.sam-ro { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 26px; margin: 0 0 4px;
-          font-size: 0.8125rem; color: var(--ink-soft); }
+.sam-ro { margin: 0 0 4px; font-size: 0.8125rem; color: var(--ink-soft); }
+.sam-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-height: 26px; }
+.sam-lab { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); min-width: 7.6em; }
+.sam-alt { color: var(--ink-soft); }
+.sam-dir { font-style: italic; }
+.sam--S .sam-alt { display: none; }
+.sam--S .sam-lab { min-width: 0; }
 .sam-badge { font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 8px; }
 .sam-mono { font-family: var(--font-mono); color: var(--ink); }
 .sam-vi { font-family: var(--sam-serif); font-style: italic; font-size: 0.95rem; color: var(--ink); }

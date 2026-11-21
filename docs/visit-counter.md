@@ -2,7 +2,7 @@
 
 *How many people open these pages, measured where the pages are served and with nothing added to them: no script, no cookie. What the owner can already see, what it would take to count each article, and which numbers could be shown to everybody. As of 2026-11-18: the counter was switched on that evening, so the numbers start there.*
 
-**The short version.** krm-demo.org is served by Amazon CloudFront, and CloudFront counts every request whether we ask it to or not. Totals for the whole site are available today, and so is a list of the most requested pages; both need an AWS login. A counter that every visitor can see takes one more step: a small scheduled job that turns the request logs into a tiny file of totals, which the page then reads. That is how it is done here ([§5](#s5)), and it is the same trick this site already uses to notice [a new version of itself](page-refresh.md).
+**The short version.** krm-demo.org is served by [Amazon CloudFront](https://aws.amazon.com/cloudfront/){: .tech}, and CloudFront counts every request whether we ask it to or not. Totals for the whole site are available today, and so is a list of the most requested pages; both need an [AWS](https://aws.amazon.com/){: .tech} login. A counter that every visitor can see takes one more step: a small scheduled job that turns the request logs into a tiny file of totals, which the page then reads. That is how it is done here ([§5](#s5)), and it is the same trick this site already uses to notice [a new version of itself](page-refresh.md).
 
 ## 1. A request is not a reader
 
@@ -18,13 +18,13 @@ To count readers, count only requests that mean "someone opened a page":
 
 Two effects blur even that number, and both are harmless. A reload within five minutes never reaches CloudFront, because the browser was told the page stays fresh for 300 seconds; it is the same reader anyway. And when a link is pasted into a messenger, the messenger fetches the page to draw a preview, which counts as one more "reader".
 
-**Why count at CloudFront and not at the storage behind it?** CloudFront answers most requests from its own cache. The S3 bucket behind it sees only the few that miss, so its numbers would be far too low.
+**Why count at CloudFront and not at the storage behind it?** CloudFront answers most requests from its own cache. The [S3](https://aws.amazon.com/s3/){: .tech} bucket behind it sees only the few that miss, so its numbers would be far too low.
 
 ## 2. Four places to look
 
 | Where | What it shows | Per page | Who can see it | Cost | To set up |
 | --- | --- | --- | --- | --- | --- |
-| CloudWatch metrics | Requests, bytes and error rates for the whole site, minute by minute | No | The owner, in the AWS console; or anyone, through a shared dashboard ([§3](#s3)) | Free | Nothing: on by default |
+| [CloudWatch](https://aws.amazon.com/cloudwatch/){: .tech} metrics | Requests, bytes and error rates for the whole site, minute by minute | No | The owner, in the AWS console; or anyone, through a shared dashboard ([§3](#s3)) | Free | Nothing: on by default |
 | CloudFront console reports | The 50 most requested addresses with their request counts; where visitors came from; their devices, browsers and countries | Yes | The owner, in the AWS console | Free | Nothing: on by default |
 | Access logs | One line per request: time, address, answer, referring page, browser, and more if asked for | Yes | The owner only | Cents per month for storage | A private bucket and a delivery setting |
 | A counter file made from the logs | Whatever totals we choose to publish | Yes | Everybody | Close to nothing | A scheduled job ([§5](#s5)) |
@@ -49,7 +49,7 @@ Nothing runs in the reader's browser beyond fetching one small file, and no cook
 - **People.** It counts openings, not persons. One reader on a phone and a laptop is two; a reader who comes back every day is counted every day.
 - **Robots that lie.** Search engines say who they are and are easy to leave out. Scrapers that pretend to be a browser are counted as readers.
 - **Attention.** There is no "time on page" and no "read to the end". Only a script in the page could measure that.
-- **The preview site.** GitHub Pages keeps no logs for us, so only krm-demo.org is counted. That is right: the preview is for testing.
+- **The preview site.** [GitHub Pages](https://pages.github.com/){: .tech} keeps no logs for us, so only krm-demo.org is counted. That is right: the preview is for testing.
 
 A script-based counter errs the other way: it misses every reader whose browser blocks trackers. The two methods never agree, and the truth lies between them. For a site of long articles, "how many times was this opened" is the question, and the logs answer it.
 
