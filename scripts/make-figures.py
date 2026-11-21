@@ -193,6 +193,55 @@ def fft_gaussians():
     save("fft-gaussians.svg", 640, 340, parts)
 
 
+def fft_bell_16():
+    """N = 16 on [0, 2pi): the bell and its DFT coincide (top); the bell moved to pi gets alternating signs (bottom)."""
+    n_pts = 16
+    n = np.arange(n_pts)
+    x = 2 * np.pi * n / n_pts
+    g = sum(np.exp(-np.pi * (n + m * n_pts) ** 2 / n_pts) for m in range(-3, 4))
+    fine = np.linspace(0, 2 * np.pi, 401)
+    t = fine * n_pts / (2 * np.pi)
+    curve = sum(np.exp(-np.pi * (t + m * n_pts) ** 2 / n_pts) for m in range(-3, 4))
+    ticks = [0, np.pi / 2, np.pi, 3 * np.pi / 2, 2 * np.pi]
+    labels = {0: "0", 1: "π/2", 2: "π", 3: "3π/2", 4: "2π"}
+    fmt = lambda v: labels[int(round(v / (np.pi / 2)))]
+    top = Plot(50, 12, 550, 130, (0, 2 * np.pi), (0, 1.1))
+    parts = top.frame(ticks, [0, 0.5, 1], "x", xfmt=fmt)
+    G = np.fft.fft(g).real / np.sqrt(n_pts)
+    parts += top.line(fine, curve, GRID, 1.2) + top.dots(x, G, B, 6, hollow=True) + top.dots(x, g, A, 3)
+    moved = np.roll(g, n_pts // 2)
+    H = np.fft.fft(moved).real / np.sqrt(n_pts)
+    bot = Plot(50, 195, 550, 130, (0, 2 * np.pi), (-1.1, 1.1))
+    parts += bot.frame(ticks, [-1, 0, 1], "x", xfmt=fmt)
+    mid = sum(np.exp(-np.pi * (t - n_pts / 2 + m * n_pts) ** 2 / n_pts) for m in range(-3, 4))
+    parts += bot.line(fine, mid, GRID, 1.2)
+    for xi, h in zip(x, H):
+        parts.append(seg(bot.px(xi), bot.py(0), bot.px(xi), bot.py(h), B, 1.4))
+    parts += bot.dots(x, H, B, 6, hollow=True) + bot.dots(x, moved, A, 3)
+    save("fft-bell-16.svg", 640, 360, parts)
+
+
+def fft_dice():
+    """The sum of ten dice, computed by multiplying spectra, against the bell with the same mean and variance."""
+    d, n_pts = 10, 64
+    die = np.zeros(n_pts)
+    die[1:7] = 1 / 6
+    p_sum = np.fft.ifft(np.fft.fft(die) ** d).real
+    mean, var = 3.5 * d, d * 35 / 12
+    k = np.arange(10, 61)
+    fine = np.linspace(10, 60, 501)
+    bell = np.exp(-(fine - mean) ** 2 / (2 * var)) / np.sqrt(2 * np.pi * var)
+    p = Plot(62, 15, 530, 290, (10, 60), (0, 0.08))
+    parts = p.frame([10, 20, 30, 35, 40, 50, 60], [0, 0.02, 0.04, 0.06, 0.08], "k",
+                    xfmt=lambda v: str(int(v)), yfmt=lambda v: f"{v:.2f}")
+    half = 0.36 * (p.px(1) - p.px(0))
+    for kk in k:
+        parts.append(f'<rect x="{p.px(kk) - half:.1f}" y="{p.py(p_sum[kk]):.1f}" width="{2 * half:.1f}" '
+                     f'height="{p.py(0) - p.py(p_sum[kk]):.1f}" style="fill:{A};opacity:0.75"/>')
+    parts += p.line(fine, bell, B, 2)
+    save("fft-dice.svg", 640, 340, parts)
+
+
 def home_glyphs():
     """Prints the small drawings used beside the article titles on the home page (pasted into site/index.html)."""
     x = np.linspace(-1, 1, 81)
@@ -210,4 +259,6 @@ if __name__ == "__main__":
     fft_spectrum()
     dct_vs_dft()
     fft_gaussians()
+    fft_bell_16()
+    fft_dice()
     home_glyphs()

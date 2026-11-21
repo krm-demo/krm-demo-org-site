@@ -2,7 +2,7 @@
 
 *How a trillion operations became twenty million, which cosine sits inside every JPEG, and the one shape the transform cannot change. The second note in a series that began with [Chebyshev polynomials](chebyshev.en.md). Statements come with proofs; click "Proof" to expand them. Every listing was run (Python with NumPy and SciPy, TypeScript on Node 22, Java), and the output shown under it is what it printed.*
 
-**The short version.** The discrete Fourier transform (DFT) turns $N$ samples of a signal into $N$ numbers that say how much of each frequency the signal contains. Computed from its definition it costs $N^2$ operations. The fast Fourier transform (FFT) produces the same numbers in about $N\log_2 N$, by cutting the problem in half again and again. Mirror the signal before transforming it and you get the cosine transform inside JPEG and MP3. And one shape, the bell curve, comes out of the transform exactly as it went in.
+**The short version.** The discrete Fourier transform (DFT) turns $N$ samples of a signal into $N$ numbers that say how much of each frequency the signal contains. Computed from its definition it costs $N^2$ operations. The fast Fourier transform (FFT) produces the same numbers in about $N\log_2 N$, by cutting the problem in half again and again. Mirror the signal before transforming it and you get the cosine transform inside JPEG and MP3. And one shape, the bell curve, comes out of the transform exactly as it went in; it makes a handy test for an FFT, and it explains why noise is so often Gaussian.
 
 ## 0. Why it matters: a million samples
 
@@ -417,11 +417,159 @@ $(F^2x)_m = \frac1N\sum_k\omega^{-mk}\sum_n x_n\,\omega^{-kn} = \frac1N\sum_n x_
 
 Transform any signal four times and you get it back. The bell $g^{(1)}$ belongs to the eigenvalue 1. For $N = 8$ the eight eigenvalues are $1, 1, 1, -1, -1, -\mathrm{i}, -\mathrm{i}, \mathrm{i}$ (computed). On the whole line the same role is played by the Hermite functions, a bell curve multiplied by polynomials, with eigenvalues $(-\mathrm{i})^n$.
 
-## 6. History: asteroids, heat and a test ban
+## 6. The bell at work: a table, a test for the FFT, and Gaussian noise
 
-**Gauss, 1805.** Carl Friedrich Gauss was computing the orbits of the newly discovered asteroids Pallas and Juno. He needed the coefficients of a trigonometric series through equally spaced observations, and he found that the work for a composite number of points splits into smaller pieces. That is the idea of [§2](#s2). He wrote it down in Latin, did not publish it and did not count what it saved. It was printed only after his death, in his collected works, and stayed unnoticed.
+### 6.1 The bell in numbers
+
+The DFT does not know which interval the samples were taken on: all it receives is $N$ numbers. The interval $[0, 2\pi)$ with nodes $x_n = 2\pi n/N$ is only a label under the axis, and any other would do. Two things do matter.
+
+- **The width is not ours to choose; $N$ sets it.** The standard deviation of the bell $g^{(1)}$ is $\sqrt{N/(2\pi)}$ samples, or $\sqrt{2\pi/N}$ on $[0, 2\pi)$. A bell of another width turns not into itself but into a bell of the inverse width ([§5.2](#s5-2)).
+- **The peak sits at zero.** The DFT glues the ends of the interval together ([§4](#s4)), so the right half of the bell lives next to $2\pi$: $g_{N-n} = g_n$.
+
+Here are all the numbers for $N = 16$. The second half of the table repeats the first in reverse order.
+
+| $n$ | $x_n$ | $g_n$ | DFT$/\sqrt{16}$ | $e^{-\pi n^2/16}$ |
+| --- | --- | --- | --- | --- |
+| 0 | 0 | 1.000000 | 1.000000 | 1.000000 |
+| 1 | 0.393 | 0.821725 | 0.821725 | 0.821725 |
+| 2 | 0.785 | 0.455938 | 0.455938 | 0.455938 |
+| 3 | 1.178 | 0.170820 | 0.170820 | 0.170820 |
+| 4 | 1.571 | 0.043214 | 0.043214 | 0.043214 |
+| 5 | 1.963 | 0.007382 | 0.007382 | 0.007382 |
+| 6 | 2.356 | 0.000851 | 0.000851 | 0.000851 |
+| 7 | 2.749 | 0.0000664 | 0.0000664 | 0.0000663 |
+| 8 | 3.142 | 0.0000070 | 0.0000070 | 0.0000035 |
+
+The imaginary parts of the result are at most $10^{-17}$, and the real parts agree with $g_n$ in all 16 rows to $10^{-16}$. The last column is the bell without the added copies. It differs visibly from the exact one only near $x = \pi$, where the tails of two neighbouring copies meet, and there it is exactly half as large. This is the correction $e^{-\pi N/4}$ of [§5.2](#s5-2): $3.5\cdot10^{-6}$ at $N = 16$, already $10^{-22}$ at $N = 64$.
+
+Put the peak in the middle, at $x = \pi$, and the bell no longer turns into itself: the DFT returns it at zero, with alternating signs, $(-1)^k g_k$. This is the shift of [§6.2](#s6-2) with $a = N/2$, $b = 0$. To draw the fixed bell in the middle, swap the two halves of both the input and the output (in NumPy, `fftshift`).
+
+![Top: sixteen samples of the bell on the interval from 0 to 2π, and circles for its DFT lying on the samples. Bottom: the bell with its peak at π and its DFT with alternating signs](figures/fft-bell-16.svg)
+
+*Figure 4.* $N = 16$. Dots are the samples, circles the DFT$/\sqrt N$, the grey line the continuous bell. Top: peak at zero, and the circles sit on the dots. Bottom: peak at $\pi$; the sizes are those of the top panel, but the bell has moved to the edges and changes sign from sample to sample.
+
+### 6.2 The bell as a test for the FFT
+
+A good test knows the right answer in advance and needs no second DFT implementation to compare with. The bell is such a test for every $N$: a power of two, 1000, the prime 4099. Its values are irrational, but that does no harm: the computer stores every number with an error of about $10^{-16}$ anyway, so the result has to be compared with a tolerance in any case.
+
+Its weakness is a different one. The bell is real and even, $g_{-n} = g_n$. So it does not care which sign the exponent has, whether the inverse DFT was called instead of the forward one, whether the result was conjugated, or whether $k$ and $N - k$ were swapped. These are the most common mistakes, and a bell sitting at zero does not see them. The cure is to move the bell and multiply it by a tone:
+
+> **Statement.** Let $g = g^{(1)}$, let $F$ be the DFT divided by $\sqrt N$, and let $a, b$ be integers. If $x_n = g_{n-a}\,\omega^{bn}$, then $(Fx)_k = \omega^{a(b-k)}\,g_{k-b}$. Indices are taken modulo $N$.
+
+<details markdown="1">
+<summary>Proof</summary>
+
+The sum runs over a full period, so the index can be shifted: $n = j + a$.
+
+$$
+\sum_n g_{n-a}\,\omega^{bn}\,\omega^{-kn} = \omega^{a(b-k)}\sum_j g_j\,\omega^{-(k-b)j} = \omega^{a(b-k)}\sqrt N\,g_{k-b}
+$$
+
+by [§5.2](#s5-2). It remains to divide by $\sqrt N$.
+</details>
+
+This input is complex and lopsided, and the answer is still known exactly. Let us check NumPy and the function `fft` of [§2](#s2), and then the same function with the wrong sign:
+
+```python
+import cmath
+import numpy as np
+
+def bell(N):
+    """g_n = sum over m of exp(-pi (n + mN)^2 / N); three copies each side are plenty."""
+    n = np.arange(N)
+    return sum(np.exp(-np.pi * (n + m*N)**2 / N) for m in range(-3, 4))
+
+def check(fft, N, a=0, b=0):
+    """Feeds fft the bell moved by a and modulated by b; returns the largest error against the exact answer."""
+    g, n = bell(N), np.arange(N)
+    w = lambda p: np.exp(2j*np.pi * (p % N) / N)          # omega^p; reduce p mod N first, or the reference loses digits
+    x = np.roll(g, a) * w(b*n)                             # x_n = g_{n-a} omega^{bn}
+    exact = w(a*(b - n)) * np.roll(g, b)                   # (Fx)_k = omega^{a(b-k)} g_{k-b}
+    return np.max(np.abs(np.asarray(fft(x)) / np.sqrt(N) - exact))
+
+for N in [8, 17, 1000, 1024, 4099, 2**20]:                 # 17 and 4099 are prime
+    print(f"{N:>8}  {check(np.fft.fft, N):.0e}  {check(np.fft.fft, N, a=3, b=5):.0e}")
+
+def make_fft(sign):                                         # the fft of section 2, with the sign of the exponent as a parameter
+    def fft(x):
+        n = len(x)
+        if n == 1:
+            return list(x)
+        even, odd = fft(x[0::2]), fft(x[1::2])
+        out = [0] * n
+        for k in range(n // 2):
+            t = cmath.exp(sign * 2j * cmath.pi * k / n) * odd[k]
+            out[k], out[k + n // 2] = even[k] + t, even[k] - t
+        return out
+    return fft
+
+for name, f in [("correct", make_fft(-1)), ("wrong sign", make_fft(+1))]:
+    print(f"{name:>10}  bell {check(f, 64):.0e}  moved bell {check(f, 64, a=3, b=5):.0e}")
+#        8  2e-16  3e-16
+#       17  1e-16  3e-16
+#     1000  2e-16  5e-16
+#     1024  2e-16  5e-16
+#     4099  4e-16  9e-16
+#  1048576  3e-16  6e-16
+#    correct  bell 4e-16  moved bell 2e-16
+# wrong sign  bell 4e-16  moved bell 1e+00
+```
+
+NumPy's error hardly grows with $N$, even at a million points. The bell at zero let the wrong sign through; the moved bell caught it at once. One subtlety in the test itself: compute $\omega^p$ from the remainder $p \bmod N$. Raise $\omega$ to a large power directly and the reference itself goes wrong: at $N = 2^{20}$ it loses six digits.
+
+Two more checks go well with the bell, and they need no second implementation either: Parseval's identity from [§1](#s1) and $F^4 = I$ from [§5.3](#s5-3), on random data.
+
+### 6.3 Where Gaussian noise comes from
+
+Roll a die. The sum of two dice is no longer spread evenly but shaped like a roof: there are more ways to get 7 than 2 or 12. That is a convolution: the probability of the sum $k$ is $\sum_j p_j\,p_{k-j}$. So by [§3](#s3) the spectrum of the distribution of a sum is the product of the spectra of its terms. For ten dice, raise the spectrum of one die to the tenth power:
+
+```python
+import numpy as np
+
+d, N = 10, 64                               # ten dice; 64 slots hold every sum from 0 to 60
+die = np.zeros(N); die[1:7] = 1/6           # one die: faces 1..6, equally likely
+p = np.fft.ifft(np.fft.fft(die)**d).real    # sum of ten dice: multiply the spectra ten times
+
+mean, var = 3.5*d, d*35/12
+k = np.arange(N)
+bell = np.exp(-(k - mean)**2 / (2*var)) / np.sqrt(2*np.pi*var)
+print(f"P(sum=35) = {p[35]:.5f}, bell {bell[35]:.5f}; largest gap {np.max(np.abs(p - bell)):.1e}")
+print(f"ways to roll 35: {round(p[35] * 6**d)}")
+# P(sum=35) = 0.07269, bell 0.07387; largest gap 1.2e-03
+# ways to roll 35: 4395456
+```
+
+![Bars are the probabilities of the sums of ten dice from 10 to 60; the line is the bell curve with the same mean 35 and the same variance](figures/fft-dice.svg)
+
+*Figure 5.* The sum of ten dice (bars) and the bell curve with mean 35 and variance $10\cdot35/12$ (line). The number of ways to roll 35, 4 395 456 out of $6^{10}$, comes from rounding, like the digits in [§3](#s3), and agrees with direct counting.
+
+There is nothing special about dice. Subtract the mean, and almost any spectrum near zero frequency looks like $1 - \sigma^2 t^2/2$. Multiply many such spectra, rescale, and you get $e^{-\sigma^2t^2/2}$, a bell. The distribution is then a bell as well, because a bell turns into a bell ([§5.1](#s5-1)).
+
+> **Central limit theorem.** Let $X_1, X_2, \dots$ be independent, identically distributed, with mean 0 and variance $\sigma^2$, and let $\varphi(t) = \mathbb E\,e^{-\mathrm{i}tX_1}$ be the spectrum of their distribution (its *characteristic function*). Then the spectrum of $(X_1 + \dots + X_n)/\sqrt n$ is $\varphi(t/\sqrt n)^n$, and as $n \to \infty$ it tends to $e^{-\sigma^2t^2/2}$, the spectrum of the normal distribution.
+
+<details markdown="1">
+<summary>Proof (the main step)</summary>
+
+The spectrum of a sum of independent variables is the product of their spectra, and dividing a variable by $\sqrt n$ stretches its spectrum: hence $\varphi(t/\sqrt n)^n$. Expand $\varphi$ near zero: $\varphi(0) = 1$, $\varphi'(0) = -\mathrm{i}\,\mathbb E X_1 = 0$, $\varphi''(0) = -\mathbb E X_1^2 = -\sigma^2$, so $\varphi(s) = 1 - \sigma^2s^2/2 + o(s^2)$. Then
+
+$$
+\varphi(t/\sqrt n)^n = \Bigl(1 - \frac{\sigma^2t^2}{2n} + o\bigl(\tfrac1n\bigr)\Bigr)^n \to e^{-\sigma^2t^2/2} .
+$$
+
+That convergence of the spectra implies convergence of the distributions themselves is Lévy's continuity theorem, whose proof we skip.
+</details>
+
+That is why noise is so often Gaussian. Thermal noise in a resistor is the sum of countless kicks from individual electrons. A measurement error is the sum of many small causes, none of them the main one. Adding independent causes multiplies spectra, and the product of many spectra is a bell. The same mechanism works in image processing: a few passes of a plain averaging filter give an almost exact Gaussian blur.
+
+The DFT has one more fixed object, this time a statistical one. If the $N$ samples are independent complex Gaussian variables of equal power (*white Gaussian noise*), then after $F$ you get exactly the same kind of noise. $F$ is unitary, that is, a rotation in complex $N$-dimensional space, and the distribution of white Gaussian noise does not change under rotations. That is why the noise in [Figure 1](#s1-1) lies in an even thin layer across all frequencies.
+
+## 7. History: asteroids, heat, the bell curve and a test ban
+
+**Gauss, 1805.** Carl Friedrich Gauss (1777–1855) was computing the orbits of the newly discovered asteroids Pallas and Juno. He needed the coefficients of a trigonometric series through equally spaced observations, and he found that the work for a composite number of points splits into smaller pieces. That is the idea of [§2](#s2). He wrote it down in Latin, did not publish it and did not count what it saved. It was printed only after his death, in his collected works, and stayed unnoticed.
 
 **Fourier, 1807.** Joseph Fourier (1768–1830) had been to Egypt with Napoleon and was governing a French province from Grenoble when he sent the Paris Institute a memoir on how heat spreads through solid bodies. Its claim was that any distribution of temperature, even one with corners and jumps, is a sum of sines and cosines. Lagrange did not believe it, and the memoir was not printed. The book that made the idea famous, *Théorie analytique de la chaleur*, came out in 1822. One of its examples is heat flowing around a metal ring, exactly the periodic setting of [§1](#s1). Note the dates: Gauss's fast algorithm is two years older than the series it computes.
+
+**The bell, 1733–1810.** Abraham de Moivre found the bell first, in 1733, as an approximation to the number of heads in many tosses of a coin. In 1801 Gauss became famous when, from a handful of observations, he computed the orbit of Ceres, which astronomers had lost, and said where to look for it; it turned up almost exactly there. In his 1809 book on the motion of celestial bodies he derived the bell as the law of observational errors and used it to justify the method of least squares. Ever since, the distribution has been called Gaussian, and later the bell was printed, next to Gauss's portrait, on the German 10-mark banknote. In 1810 Laplace proved the first central limit theorem, and he proved it through the spectra of distributions, the characteristic functions of [§6.3](#s6-3). The same trick rescued Fourier with heat in those very years: in harmonics, the complicated becomes simple.
 
 **Cooley and Tukey, 1965.** In 1963 the statistician John Tukey and the physicist Richard Garwin sat in a meeting of President Kennedy's Science Advisory Committee. The United States wanted a nuclear test ban that could be checked without inspectors on Soviet soil, by seismometers placed around the country. That meant Fourier analysis of long seismic records, too slow for the computers of the day. Tukey had an idea for speeding it up. Garwin saw its worth and took the notes to IBM, where James Cooley was asked to program it. Cooley was told it was for a crystal of helium-3, which was also true: Garwin wanted it for that as well. The program ran in 1964 on an IBM 7094, and the five-page paper appeared in April 1965. Only afterwards did historians trace the idea back, step by step, to Gauss.
 
@@ -433,5 +581,6 @@ Transform any signal four times and you get it back. The bell $g^{(1)}$ belongs 
 - M. T. Heideman, D. H. Johnson, C. S. Burrus, *Gauss and the history of the fast Fourier transform*, Archive for History of Exact Sciences 34 (1985), 265–277. [doi:10.1007/BF00348431](https://doi.org/10.1007/BF00348431)
 - N. Ahmed, T. Natarajan, K. R. Rao, *Discrete cosine transform*, IEEE Transactions on Computers C-23 (1974), 90–93; and N. Ahmed, *How I came up with the discrete cosine transform*, Digital Signal Processing 1 (1991), 4–5.
 - M. Frigo, S. G. Johnson, *The design and implementation of FFTW3*, Proceedings of the IEEE 93 (2005), 216–231.
+- H. Fischer, *A History of the Central Limit Theorem: From Classical to Modern Probability Theory*, Springer, 2011.
 - J. Fourier, *Théorie analytique de la chaleur*, Paris, 1822.
 - IEEE Milestone, [First demonstration of the fast Fourier transform (FFT), 1964](https://ethw.org/Milestones:First_Demonstration_of_the_Fast_Fourier_Transform_(FFT),_1964), Engineering and Technology History Wiki.
