@@ -2,9 +2,10 @@
   "id": "swept-amount-math",
   "kind": "project",
   "category": "projects",
+  "link": "https://krm-demo.github.io/ai-plans-instr/plans-math/",
+  "linkLabel": "GitHub Pages",
   "languages": [
-    "en",
-    "ru"
+    "en"
   ],
   "title": {
     "en": {
@@ -13,21 +14,21 @@
       "short": "Equilibrium"
     },
     "ru": {
-      "full": "Мои балансы поют романсы",
-      "medium": "Балансы поют романсы",
-      "short": "Романсы"
+      "full": "Равновесие балансов",
+      "medium": "Равновесие балансов",
+      "short": "Равновесие"
     }
   },
   "summary": {
-    "en": "My balances sing romances. One lives paycheck to paycheck and sighs whenever it gets too thin; the other sits quietly far away and grows. They have an arrangement: never too much, never too little, and no calls about pocket change. Here is that arrangement, drawn. Drag it around and see who starts singing.",
-    "ru": "Мои балансы поют романсы. Один живёт от зарплаты до зарплаты и вздыхает, когда худеет; другой тихо сидит вдалеке и толстеет. У них уговор: не слишком много, не слишком мало, и по мелочам не звонить. Вот этот уговор, нарисованный. Подвигайте его и послушайте, кто запоёт."
+    "en": "The swept amount of a cash sweep per current balance, as an interactive graph: thresholds, nominals, what the investment account has and accepts. Drag the handles and watch the sweep status change. With a Java library that draws the same graph as one SVG, from an icon to the full picture.",
+    "ru": "Сумма перевода при cash sweep в зависимости от текущего баланса, интерактивным графиком: пороги, номиналы, сколько есть на инвестиционном счёте и сколько он принимает. Двигайте ручки и смотрите, как меняется статус. Плюс Java-библиотека, которая рисует тот же график одним SVG — от иконки до полной картинки."
   },
   "icon": {
     "large": "icons/swept-amount-math.svg",
     "small": "icons/swept-amount-math-small.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-20T18:40:00-05:00",
+  "updatedAt": "2026-11-21T13:30:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,

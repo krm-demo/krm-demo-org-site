@@ -50,8 +50,9 @@ Sources of https://krm-demo.org.
   Deployed as stack `krm-demo-org-visit-counter` in `us-east-1`. To update it after editing the template:
   `aws cloudformation deploy --region us-east-1 --stack-name krm-demo-org-visit-counter --template-file infra/visit-counter.yaml --capabilities CAPABILITY_IAM`
 - `site/projects/<name>/` — scripts, styles and pictures of an interactive project page `site/<name>.<lang>.html` (hand-written, listed through
-  its profile `docs/<name>.json` like an article). `swept-amount-math/`: the "Balances Equilibrium" graph (cash sweep math; the full write-up and a JavaScript-free version served by AWS Lambda are in krm-demo/ai-plans-instr, `plans-math/`); its static picture
-  `swept-amount-math.svg` is drawn from the widget's own code by `scripts/make-swept-amount-math-svg.js` (Node, no dependencies; run by hand, result committed).
+  its profile `docs/<name>.json` like an article). None at the moment: "Balances Equilibrium" (cash sweep math) moved to the GitHub Pages of
+  krm-demo/ai-plans-instr (`plans-math/`); its profile `docs/swept-amount-math.json` only links there (`"link"`, with
+  `"linkLabel"` for the badge), and `site/swept-amount-math*.html` redirect to it.
 - `drafts/` — material being prepared; not part of the site.
 - `.github/workflows/pages.yml` — preview: every push to `main` → GitHub Pages.
 - `.github/workflows/release-aws-s3.yml` — release: every `v*` tag → AWS S3 bucket `krm-demo.org`, then clears the CloudFront cache.
@@ -195,6 +196,7 @@ Projects have a profile and a `link` instead of Markdown. A bad profile stops th
   "category": "math",                // one of docs/categories.json
   "languages": ["en", "ru"],
   "link": "https://…",               // projects only: where the entry opens
+  "linkLabel": "GitHub Pages",       // the badge of a linked entry (default "GitHub")
   "featured": true,                  // optional: keep in Current Exhibition however old
   "title": { "en": { "full": "…", "medium": "…", "short": "…" }, "ru": { … } },
   "summary": { "en": "…", "ru": "…" },

@@ -109,7 +109,7 @@ def title_link(p, size):
 
 def lang_badges(p):
     if p.get("link"):
-        return '<span class="kind-badge">GitHub</span>'
+        return f'<span class="kind-badge">{esc(p.get("linkLabel", "GitHub"))}</span>'
     out = []
     for lang in p["languages"]:
         hint = "English" if lang == "en" else f"Русский: {title(p, lang, 'full')}"
