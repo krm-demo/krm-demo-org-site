@@ -27,15 +27,17 @@ def _git(*args):
 
 
 def dates(doc_id):
-    """{"preview": datetime or None, "release": datetime or None, "tag": "v1.1.0" or None}"""
+    """{"preview": first commit (the entry appeared), "updated": last commit (its last change),
+        "release": the first v* tag that contains it, "tag": that tag} — datetimes or None."""
     if doc_id in _cache:
         return _cache[doc_id]
-    result = {"preview": None, "release": None, "tag": None}
+    result = {"preview": None, "updated": None, "release": None, "tag": None}
     log = _git("log", "--reverse", "--format=%H %cI", "--",
                f"docs/{doc_id}.json", f"docs/{doc_id}.md", f"docs/{doc_id}.*.md")
     if log:
         sha, when = log.splitlines()[0].split(" ", 1)
         result["preview"] = dt.datetime.fromisoformat(when)
+        result["updated"] = dt.datetime.fromisoformat(log.splitlines()[-1].split(" ", 1)[1])
         tags = _git("tag", "--list", "v*", "--contains", sha, "--sort=creatordate",
                     "--format=%(refname:short) %(creatordate:iso-strict)")
         if tags:

@@ -264,11 +264,9 @@ html[data-skin="pulp"] .site-foot { border-top-width: 4px; }
 .entry h3 a:hover { color: var(--link); }
 .entry p { margin: 0; max-width: 38rem; color: var(--ink-soft); }
 .entry-langs { white-space: nowrap; }
-/* Right column of a new entry: language badges, then category, date and how long ago (filled by home.js). */
-.entry-side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; text-align: right; }
-.entry-meta { font-size: 0.8rem; line-height: 1.5; color: var(--ink-soft); white-space: nowrap; }
+/* Under the title, next to the icon: category · last change · how long ago (filled by home.js); created in the tooltip. */
+.entry p.entry-meta { margin: 0 0 0.45rem; font-size: 0.85rem; color: var(--ink-soft); }
 .entry-meta .rel-time { font-style: italic; }
-.meta-sep::after { content: ""; }
 
 html[data-skin="pulp"] .home h2 { text-transform: uppercase; color: var(--accent); }
 html[data-skin="pulp"] .entry, html[data-skin="pulp"] .reading-list { border-color: var(--rule); border-width: 3px; }
@@ -354,12 +352,11 @@ html[data-skin="pulp"] .chip-all { border-width: 2px; }
 .home { padding-bottom: 3rem; }
 
 @media (max-width: 40rem) {
-    .entry { grid-template-columns: minmax(0, 1fr); }
-    .entry .glyph { width: 6rem; height: 3.4rem; }
-    .entry-side { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.75rem; text-align: left; }
-    .entry-meta { white-space: normal; }
-    .meta-sep br { display: none; }
-    .meta-sep::after { content: " · "; }
+    .entry { grid-template-columns: 5rem minmax(0, 1fr); gap: 0.4rem 1rem; align-items: start; }
+    .entry .glyph { width: 5rem; height: 2.85rem; margin-top: 0.2rem; }
+    .entry > .entry-langs { grid-column: 2; }
+    .entry h3 { font-size: 1.25rem; }
+
     .item { grid-template-columns: 2.6rem minmax(0, 1fr); }
     .item-icon { width: 2.6rem; height: 1.5rem; }
     .item .entry-langs { grid-column: 2; margin-top: 0.3rem; }

@@ -23,10 +23,9 @@
 
 .sam-ro { margin: 0 0 4px; font-size: 0.8125rem; color: var(--ink-soft); }
 .sam-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-height: 26px; }
-.sam-lab { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); min-width: 7.6em; }
-.sam-alt { color: var(--ink-soft); }
+.sam-lab { font-family: var(--sam-serif); font-style: italic; font-size: 0.85rem; color: var(--ink-soft); min-width: 7.4em; }
+.sam .sam-fmt { height: 22px; padding: 0 6px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); border-radius: 6px; }
 .sam-dir { font-style: italic; }
-.sam--S .sam-alt { display: none; }
 .sam--S .sam-lab { min-width: 0; }
 .sam-badge { font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 8px; }
 .sam-mono { font-family: var(--font-mono); color: var(--ink); }

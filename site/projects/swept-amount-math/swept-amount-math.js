@@ -297,7 +297,8 @@
     if (!eq) xs.push({ x: tmax, s: Tx, c: th.ink, y: 0, pri: 1 });
     if (!zeroA && xk > xA + K) xs.push({ x: xk, s: Tn + ' − A', c: Z.in.ink, y: imax, pri: 2 });
     if (visX(xo) && xo < xZ - (xZ - xA) * 0.01 && visY(omax)) xs.push({ x: xo, s: Tx + ' + L', c: Z.over.ink, y: omax, pri: 1 });
-    xs = xs.filter(function (q) { return q.pri <= pf.pri; });
+    // A nominal of 0 adds no point of its own (T_min − 0 is T_min).
+    xs = xs.filter(function (q) { return q.pri <= pf.pri && !((q.s.indexOf('τ_min') >= 0 && nmin === 0) || (q.s.indexOf('τ_max') >= 0 && nmax === 0)); });
     xs.sort(function (a, b) { return a.x - b.x; });
     var tw = function (t) { return t.replace(/_/g, '').length * 6.6 * f; };
     var rows = [];
@@ -312,7 +313,7 @@
 
     var ys = [{ y: nmin, s: 'τ_min', c: Z.in.ink, px: X(xl), pri: 2 }, { y: nmax, s: 'τ_max', c: Z.out.ink, px: X(xr), pri: 2 },
               { y: imax, s: 'A', c: Z.inp.ink, px: null, pri: 1 }, { y: omax, s: 'L', c: Z.over.ink, px: null, pri: 1 }];
-    ys = ys.filter(function (q) { return q.pri <= pf.pri && visY(q.y) && !(zeroA && (q.s === 'A' || q.s === 'τ_min')); });
+    ys = ys.filter(function (q) { return q.pri <= pf.pri && visY(q.y) && !(zeroA && (q.s === 'A' || q.s === 'τ_min')) && !(q.s[0] === 'τ' && q.y === 0); });
     ys.forEach(function (q) { q.cy = Y(q.y); });
     ys.sort(function (a, b) { return b.cy - a.cy; });
     for (var i = 1; i < ys.length; i++) if (ys[i - 1].cy - ys[i].cy < 16 * f) ys[i].cy = ys[i - 1].cy - 16 * f;
@@ -356,10 +357,15 @@
     var dot = function (x, y, r, st) { if (visX(x) && visY(y)) h += circle(X(x), Y(y), r, st); };
     if (tmax - tmin >= 2 * K) dot(xc, yc, 3, 'fill:' + GRAY);
     if (!zeroA && xk > xA) dot(xk, imax, 4.5, 'fill:' + Z.inp.ink);
-    if (xo < xZ) dot(xo, omax, 5, 'fill:' + Z.out.ink);
+    if (xo < xZ) {
+      // A payment of exactly L is allowed: filled on the line; Overflow starts right after it, open on the axis.
+      dot(xo, omax, 5, 'fill:' + Z.out.ink);
+      dot(xo, 0, 5, 'fill:' + th.bg + ';stroke:' + Z.over.ink + ';stroke-width:2');
+    }
     // At a jump the sweep owns the point (filled), the zero piece starts and ends open; no jump when τ = 0.
     var open = 'fill:' + th.bg + ';stroke:' + BLUE + ';stroke-width:2';
-    if (zeroA) dot(xl, 0, 5, open);
+    // With A = 0, T_min − τ_min itself needs a sweep in of τ_min that the empty account cannot make: a failure point.
+    if (zeroA) dot(xl, 0, 5, nmin > 0 ? 'fill:' + Z.zero.ink : open);
     else if (nmin > 0) { dot(xl, 0, 5, open); dot(xl, nmin, 5, 'fill:' + Z.in.ink); } else dot(xl, 0, 5, 'fill:' + Z.in.ink);
     if (nmax > 0) { dot(xr, 0, 5, open); dot(xr, nmax, 5, 'fill:' + Z.out.ink); } else dot(xr, 0, 5, 'fill:' + Z.out.ink);
 
@@ -633,18 +639,26 @@
     this.svg.innerHTML = r.svg;
 
     var z = ZONES[r.zone];
-    // Two status lines: the threshold as an interval with its nominals, then what the probed balance means.
+    // Two status lines: the threshold (closed form with its nominals, or the open interval; a small switch), then
+    // what the probed balance means. A nominal of 0 is left out; with T_min = T_max it is a target balance [T].
+    var single = s.tmin === s.tmax;
+    var closed = (s.nmin > 0 ? '−' + money(s.nmin) + ' ' : '') + '[' + money(s.tmin) + (single ? '' : ' ; ' + money(s.tmax)) + ']' +
+                 (s.nmax > 0 ? ' +' + money(s.nmax) : '');
+    var openForm = '(' + money(s.tmin - s.nmin) + ' ; ' + money(s.tmax + s.nmax) + ')';
     var dir = r.zone === 'in' || r.zone === 'inp' ? 'from Investment-Account to DDA'
             : r.zone === 'out' ? 'from DDA to Investment-Account' : z.terminal ? '' : 'nothing to transfer';
     el.querySelector('.sam-ro').innerHTML =
-      '<div class="sam-line"><span class="sam-lab">Threshold:</span><span class="sam-mono">−' + money(s.nmin) + ' [' + money(s.tmin) +
-        ' ; ' + money(s.tmax) + '] +' + money(s.nmax) + '</span><span class="sam-mono sam-alt">(' + money(s.tmin - s.nmin) + ' ; ' +
-        money(s.tmax + s.nmax) + ')</span></div>' +
-      '<div class="sam-line"><span class="sam-lab">Sweep Status:</span><span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' +
+      '<div class="sam-line"><span class="sam-lab">' + (single ? 'target balance:' : 'threshold:') + '</span>' +
+        '<span class="sam-mono">' + (this.openForm ? openForm : closed) + '</span>' +
+        '<button type="button" class="sam-fmt" title="' + (this.openForm ? 'Show the thresholds with their nominals' : 'Show the interval where nothing is swept') +
+        '">' + (this.openForm ? '[ ]' : '( )') + '</button></div>' +
+      '<div class="sam-line"><span class="sam-lab">sweep status:</span><span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' +
         z.title + (z.terminal ? ' ⏚' : '') + '</span>' +
-        '<span class="sam-vi">x</span><span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
-        '<span class="sam-vi">y</span><span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>' +
+        '<span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
+        '<span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>' +
         (dir ? '<span class="sam-dir">' + dir + '</span>' : '') + '</div>';
+    var self2 = this;
+    el.querySelector('.sam-fmt').addEventListener('click', function () { self2.openForm = !self2.openForm; self2.draw(); });
 
     // The formula fills the width: set once at 10px, measured, then scaled (up to the profile's largest size).
     var fx = el.querySelector('.sam-fx'), eq = s.tmin === s.tmax, max = sweptAmountMathProfiles[this.shown].fx;

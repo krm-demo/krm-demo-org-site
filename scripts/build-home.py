@@ -145,18 +145,12 @@ def exhibition_html(profiles, now, cat_titles):
                 {icon_svg(p, "large", "glyph")}
                 <div>
                     <h3>{title_link(p, "full")}</h3>
+                    <p class="entry-meta">{category_html(p, cat_titles)} · {updated_html(p)} · {relative_html(p)}</p>
                     <p{summary_ru(p)}>{esc(p.get("summary", {}).get("en", ""))}</p>
                 </div>
-                <div class="entry-side">
-                    <div class="entry-langs">{lang_badges(p)}</div>
-                    <div class="entry-meta">{category_html(p, cat_titles)}{META_SEP}{published_html(p)}{META_SEP}{relative_html(p)}</div>
-                </div>
+                <div class="entry-langs">{lang_badges(p)}</div>
             </li>""")
     return "\n".join(rows)
-
-
-# Between the lines of .entry-meta: a line break beside the entry, " · " under it on a phone (see site.css).
-META_SEP = '<span class="meta-sep"><br></span>'
 
 
 def category_html(p, cat_titles):
@@ -164,11 +158,25 @@ def category_html(p, cat_titles):
     return f'<span class="item-cat"{ru_text(t["ru"], t["en"])}>{esc(t["en"])}</span>'
 
 
+def last_change(p):
+    """The last change of an entry: its last commit (git), else the profile's updatedAt."""
+    return publish_dates.dates(p["id"])["updated"] or p["updatedAt_dt"]
+
+
+def updated_html(p):
+    """"updated 2026-Nov-21" — the last change matters more than the first; the first is in the tooltip."""
+    d = publish_dates.dates(p["id"])
+    up = last_change(p)
+    created = d["preview"] or p.get("createdAt_dt") or up
+    en, ru = f'updated {publish_dates.day(up, "en")}', f'обновлено {publish_dates.day(up, "ru")}'
+    t_en, t_ru = f'created {publish_dates.day(created, "en")}', f'создано {publish_dates.day(created, "ru")}'
+    return (f'<time datetime="{up.isoformat()}" title="{esc(t_en)}" data-ru-title="{esc(t_ru)}"'
+            f'{ru_text(ru, en)}>{esc(en)}</time>')
+
+
 def relative_html(p):
     """An empty slot that home.js fills with "3 hours ago" (krmTime.relative from build-site-info.js) and keeps current."""
-    d = publish_dates.dates(p["id"])["preview"]
-    at = d.isoformat() if d else p["updatedAt"]
-    return f'<span class="rel-time" data-at="{esc(at)}"></span>'
+    return f'<span class="rel-time" data-at="{esc(last_change(p).isoformat())}"></span>'
 
 
 def published_html(p):
@@ -177,9 +185,7 @@ def published_html(p):
     d = publish_dates.dates(p["id"])
     if not d["preview"]:
         return f'<time datetime="{esc(p["updatedAt"])}">{p["updatedAt_dt"].strftime("%Y-%m-%d")}</time>'
-    pre = d["preview"]
-    out = (f'<time datetime="{pre.isoformat()}" title="Preview" data-ru-title="Превью"'
-           f'{ru_text(publish_dates.day(pre, "ru"), publish_dates.day(pre, "en"))}>{publish_dates.day(pre, "en")}</time>')
+    out = updated_html(p)
     if d["release"]:
         rel = d["release"]
         en = f'live {publish_dates.day(rel, "en")}'
