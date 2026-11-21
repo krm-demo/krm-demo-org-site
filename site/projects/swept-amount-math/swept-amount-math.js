@@ -36,14 +36,15 @@
   var K = 1e3, M = 1e6;
   var BLUE = '#378ADD', GRAY = '#888780', PURPLE = '#8B5CF6';   // purple: the probe, a colour no zone uses
   var ZONES = {
-    zero:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept in zero', op: 0.10, terminal: true },
-    inp:   { fill: '#A8692A', ink: '#8A5418', title: 'Swept in partial', op: 0.17 },
-    in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept in full',  op: 0.13 },
-    nmin:  { fill: BLUE,      ink: BLUE,      title: 'In nominal min', op: 0.06 },
-    range: { fill: BLUE,      ink: BLUE,      title: 'In range',       op: 0.15 },
-    nmax:  { fill: BLUE,      ink: BLUE,      title: 'In nominal max', op: 0.06 },
-    out:   { fill: '#1D9E75', ink: '#1D9E75', title: 'Swept out',      op: 0.13 },
-    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Overflow',       op: 0.10, terminal: true }
+    // The titles of plans-math's Zone (krm-demo/ai-plans-instr): "In" and "Out" always capitalised, and a bit bolder.
+    zero:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept In Zero',      op: 0.10, terminal: true },
+    inp:   { fill: '#A8692A', ink: '#8A5418', title: 'Swept In Partial',   op: 0.17 },
+    in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept In Full',      op: 0.13 },
+    nmin:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Min',     op: 0.06 },
+    range: { fill: BLUE,      ink: BLUE,      title: 'In Range',           op: 0.15 },
+    nmax:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Max',     op: 0.06 },
+    out:   { fill: '#1D9E75', ink: '#1D9E75', title: 'Swept Out',          op: 0.13 },
+    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept Out Overflow', op: 0.10, terminal: true }
   };
 
   // Data ranges of the axes. x[0] also bounds the thresholds and nominals (the "pan"); the height of the plot
@@ -102,6 +103,14 @@
     for (var k in DEFAULTS) s[k] = DEFAULTS[k];
     s.omax = DEFAULTS.omax[mode || 'linear'];
     return s;
+  }
+
+  // A title with "In" / "Out" a bit bolder: tag 'tspan' for the SVG, 'b' for HTML; ⏚ after a terminal one.
+  function titleMarkup(z, weight, tag) {
+    var t = (' ' + ZONES[z].title + ' ').replace(/ (In|Out) /g, function (m, w) {
+      return ' <' + tag + ' style="font-weight:' + weight + '">' + w + '</' + tag + '> ';
+    }).trim();
+    return t + (ZONES[z].terminal ? ' ⏚' : '');
   }
 
   var clamp = function (v, a, b) { return Math.min(Math.max(v, a), b); };
@@ -257,7 +266,7 @@
       var zl = sweptAmountAt(GX[0].d1, s).zone, zr = sweptAmountAt(GX[1].d0, s).zone;
       if (zl === zr) h += band(GX[0].q1, gap, zl);
     }
-    var low = G.Y[0], wmY = (low.q0 + low.q1) / 2 - (G.Y.length > 1 ? 0 : plotH * 0.08), marks = '';
+    var wmY = P.T + 8, marks = '';                   // watermarks hang from the top: there is room up there
     bands.forEach(function (bd) {
       var z = bd[2], widest = null;
       G.X.forEach(function (sx) {
@@ -270,8 +279,8 @@
       });
       if (widest && widest.w >= pf.wmMin) {
         var cx = n2(widest.x + widest.w / 2);
-        marks += '<text transform="rotate(-90 ' + cx + ' ' + n2(wmY) + ')" x="' + cx + '" y="' + n2(wmY + 5) + '" text-anchor="middle" style="font-family:' + SANS +
-          ';font-size:' + pf.wm + 'px;font-weight:500;letter-spacing:1.5px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.42 : 0.34) + '">' + Z[z].title + (Z[z].terminal ? ' ⏚' : '') + '</text>';
+        marks += '<text transform="rotate(-90 ' + cx + ' ' + n2(wmY) + ')" x="' + cx + '" y="' + n2(wmY + 5) + '" text-anchor="end" style="font-family:' + SANS +
+          ';font-size:' + pf.wm + 'px;font-weight:500;letter-spacing:1.5px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.42 : 0.34) + '">' + titleMarkup(z, 800, 'tspan') + '</text>';
       }
     });
     h += marks + '<g class="grid"></g><g class="aux"></g>';
@@ -365,9 +374,12 @@
     // At a jump the sweep owns the point (filled), the zero piece starts and ends open; no jump when τ = 0.
     var open = 'fill:' + th.bg + ';stroke:' + BLUE + ';stroke-width:2';
     // With A = 0, T_min − τ_min itself needs a sweep in of τ_min that the empty account cannot make: a failure point.
-    if (zeroA) dot(xl, 0, 5, nmin > 0 ? 'fill:' + Z.zero.ink : open);
-    else if (nmin > 0) { dot(xl, 0, 5, open); dot(xl, nmin, 5, 'fill:' + Z.in.ink); } else dot(xl, 0, 5, 'fill:' + Z.in.ink);
-    if (nmax > 0) { dot(xr, 0, 5, open); dot(xr, nmax, 5, 'fill:' + Z.out.ink); } else dot(xr, 0, 5, 'fill:' + Z.out.ink);
+    // With τ = 0 there is no jump: T_min (T_max) itself needs nothing, so it is In Range, a filled blue point.
+    if (nmin === 0) dot(xl, 0, 5, 'fill:' + BLUE);
+    else if (zeroA) dot(xl, 0, 5, 'fill:' + Z.zero.ink);
+    else { dot(xl, 0, 5, open); dot(xl, nmin, 5, 'fill:' + Z.in.ink); }
+    if (nmax === 0) dot(xr, 0, 5, 'fill:' + BLUE);
+    else { dot(xr, 0, 5, open); dot(xr, nmax, 5, 'fill:' + Z.out.ink); }
 
     // The probe, in purple: a dashed vertical through the balance, a dashed projection onto the y axis, the point.
     if (live) {
@@ -449,35 +461,44 @@
 
   /* ---------- the formula ---------- */
 
-  // The rows go in the order of x; the branch of the probe's zone is in colour, the others grey.
-  // A plain two-column array instead of {cases}: narrower gaps, so the formula can be set larger.
-  function rowsOf(zone, eq, zeroA, T) {
-    var mid = zone === 'nmin' || zone === 'range' || zone === 'nmax';
-    var col = function (z) { return (z === 'range' ? mid : z === zone) ? ZONES[z].ink : GRAY; };
-    var Tn = eq ? 'T' : T.min, Tx = eq ? 'T' : T.max;
-    var left = zeroA ? [['zero', T.none, 'x' + T.le + Tn + T.minus + T.tmin]]
-                     : [['inp', 'A', 'x' + T.lt + Tn + T.minus + 'A'],
-                        ['in', Tn + T.minus + 'x', Tn + T.minus + 'A' + T.le + 'x' + T.le + Tn + T.minus + T.tmin]];
-    return left.concat([
-            ['range', '0', Tn + T.minus + T.tmin + T.lt + 'x' + T.lt + Tx + T.plus + T.tmax],
-            ['out', 'x' + T.minus + Tx, Tx + T.plus + T.tmax + T.le + 'x' + T.le + Tx + T.plus + 'L'],
-            ['over', T.none, 'x' + T.gt + Tx + T.plus + 'L']]).map(function (r) { return [col(r[0]), r[1], r[2]]; });
+  // One row per status, in the order of x, the status on the right; rows that cannot happen (τ = 0, T_min = T_max)
+  // are left out. The row of the probed balance is in colour, with the value of y; the others are grey.
+  // The same rows as the pictures of plans-math (SvgRenderer.formulaRows).
+  function rowsOf(s, T) {
+    var eq = s.tmin === s.tmax, Tn = eq ? 'T' : T.min, Tx = eq ? 'T' : T.max, n0 = s.nmin === 0, m0 = s.nmax === 0;
+    var inEdge = n0 ? 'x' + T.lt + Tn : 'x' + T.le + Tn + T.minus + T.tmin;
+    var rows = s.imax === 0 ? [['zero', T.none, inEdge]]
+      : [['inp', 'A', 'x' + T.lt + Tn + T.minus + 'A'], ['in', Tn + T.minus + 'x', Tn + T.minus + 'A' + T.le + inEdge]];
+    if (!n0) rows.push(['nmin', '0', Tn + T.minus + T.tmin + T.lt + 'x' + T.lt + Tn]);
+    rows.push(['range', '0', eq ? 'x = T' : Tn + T.le + 'x' + T.le + Tx]);
+    if (!m0) rows.push(['nmax', '0', Tx + T.lt + 'x' + T.lt + Tx + T.plus + T.tmax]);
+    rows.push(['out', 'x' + T.minus + Tx, (m0 ? Tx + T.lt + 'x' : Tx + T.plus + T.tmax + T.le + 'x') + T.le + Tx + T.plus + 'L']);
+    rows.push(['over', T.none, 'x' + T.gt + Tx + T.plus + 'L']);
+    return rows;
   }
   var TEX = { min: 'T_{\\min}', max: 'T_{\\max}', tmin: '\\tau_{\\min}', tmax: '\\tau_{\\max}', minus: '-', plus: '+',
               lt: '<', gt: '>', le: '\\le ', none: '\\nexists' };
   var HTML = { min: 'T<sub>min</sub>', max: 'T<sub>max</sub>', tmin: 'τ<sub>min</sub>', tmax: 'τ<sub>max</sub>',
                minus: ' − ', plus: ' + ', lt: ' &lt; ', gt: ' &gt; ', le: ' ≤ ', none: '∄' };
 
-  function formulaTex(zone, eq, zeroA) {
-    return 'y(x)=\\left\\{\\begin{array}{ll}' + rowsOf(zone, eq, zeroA, TEX).map(function (r) {
-      return '\\textcolor{' + r[0] + '}{' + r[1] + '} & \\textcolor{' + r[0] + '}{' + r[2] + '}';
+  function formulaTex(s, zone, y) {
+    return 'y(x)=\\left\\{\\begin{array}{lll}' + rowsOf(s, TEX).map(function (r) {
+      var c = r[0] === zone ? ZONES[r[0]].ink : GRAY, z = ZONES[r[0]];
+      var value = '\\textcolor{' + c + '}{' + r[1] + '}' + (r[0] === zone && y !== null
+        ? '\\;=\\textcolor{' + PURPLE + '}{\\mathbf{' + money(y, true).replace('$', '\\$').replace(/,/g, '{,}') + '}}' : '');
+      // "Swept In Partial" → \text{Swept }\textbf{In}\text{ Partial}
+      var title = z.title.replace(/(^| )(In|Out)( |$)/g, '$1}\\textbf{$2}\\text{$3');
+      return value + ' & \\textcolor{' + c + '}{' + r[2] + '} & \\quad\\textcolor{' + z.ink + '}{\\small\\text{' + title + '}' +
+        (z.terminal ? '\\;\\text{⏚}' : '') + '}';
     }).join('\\\\[2pt]') + '\\end{array}\\right.';
   }
 
   // Without KaTeX: the same rows as a small HTML table.
-  function formulaHtml(zone, eq, zeroA) {
-    return '<span class="sam-fx-plain"><span>y(x) =</span><span class="sam-fx-brace">{</span><table>' + rowsOf(zone, eq, zeroA, HTML).map(function (r) {
-      return '<tr style="color:' + r[0] + '"><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>';
+  function formulaHtml(s, zone, y) {
+    return '<span class="sam-fx-plain"><span>y(x) =</span><span class="sam-fx-brace">{</span><table>' + rowsOf(s, HTML).map(function (r) {
+      var c = r[0] === zone ? ZONES[r[0]].ink : GRAY;
+      return '<tr style="color:' + c + '"><td>' + r[1] + (r[0] === zone && y !== null ? ' <b class="sam-probe">= ' + money(y, true) + '</b>' : '') +
+        '</td><td>' + r[2] + '</td><td class="sam-fx-st" style="color:' + ZONES[r[0]].ink + '">' + titleMarkup(r[0], 700, 'b') + '</td></tr>';
     }).join('') + '</table></span>';
   }
 
@@ -518,6 +539,7 @@
         '<div class="sam-seg sam-live-only" role="group" aria-label="Axes">' + btn('data-mode="linear" title="Linear axes"', 'Linear') +
           btn('data-mode="broken" title="Broken axes: thousands bottom left, millions top right"', 'Broken') + '</div>' +
         '<span class="sam-gap"></span>' +
+        btn('class="sam-tgt sam-live-only" title="One target balance: T_min = T_max = T"', 'T') +
         btn('class="sam-sym sam-live-only" title="Labels: formulas or dollars"', '$') + btn('class="sam-rst sam-live-only" aria-label="Reset" title="Reset"', '↺') +
       '</div>' +
       '<div class="sam-live">' +
@@ -525,7 +547,7 @@
         '<svg class="sam-graph" role="img" aria-label="Swept amount versus current balance"></svg>' +
         '<div class="sam-fx"></div>' +
         '<div class="sam-chips">' + CHIPS.map(function (c) {
-          return '<div class="sam-chip"><span class="sam-sw sam-sw-' + c[4] + '" style="background:' + self.chipColour(c[0]) + '"></span>' +
+          return '<div class="sam-chip" data-chip="' + c[0] + '"><span class="sam-sw sam-sw-' + c[4] + '" style="background:' + self.chipColour(c[0]) + '"></span>' +
             '<div class="sam-chip-text"><div class="sam-nm">' + c[1] + (c[2] ? '<sub>' + c[2] + '</sub>' : '') + ' <span class="sam-mean">' + c[3] + '</span></div>' +
             '<div class="sam-v" data-v="' + c[0] + '"></div></div>' +
             '<div class="sam-bt">' + btn('data-k="' + c[0] + '" data-d="-1" aria-label="Decrease ' + c[1] + ' ' + c[2] + '"', '−') +
@@ -543,6 +565,13 @@
       b.addEventListener('click', function () { self.setMode(b.getAttribute('data-mode')); });
     });
     el.querySelector('.sam-sym').addEventListener('click', function () { self.sym = !self.sym; self.draw(); });
+    // The target switch: T_min = T_max = T, one parameter less; off again, T_max goes back $20k above.
+    el.querySelector('.sam-tgt').addEventListener('click', function () {
+      self.target = !self.target;
+      if (self.target) self.s.tmax = self.s.tmin;
+      else setParam(self.s, self.mode, 'tmax', self.s.tmin + 20 * K);
+      self.draw();
+    });
     el.querySelector('.sam-rst').addEventListener('click', function () { self.reset(); self.draw(); });
 
     // −/+ : one step per press, repeating while held.
@@ -587,7 +616,15 @@
     return { tmin: 'var(--ink, #18212c)', tmax: 'var(--ink, #18212c)', nmin: ZONES.in.ink, nmax: ZONES.out.ink, imax: ZONES.inp.ink, omax: ZONES.over.ink }[k];
   };
 
-  Widget.prototype.set = function (k, v) { setParam(this.s, this.mode, k, v); this.draw(); };
+  Widget.prototype.set = function (k, v) {
+    if (this.target && (k === 'tmin' || k === 'tmax')) {     // one target: both move together
+      var x = SCALES[this.mode].x[0];
+      this.s.tmin = this.s.tmax = clamp(Math.round(v / K) * K, x[0] + this.s.nmin, x[1] - this.s.nmax);
+    } else {
+      setParam(this.s, this.mode, k, v);
+    }
+    this.draw();
+  };
 
   Widget.prototype.setMode = function (mode) {
     if (mode === this.mode) return;
@@ -629,6 +666,10 @@
     el.querySelectorAll('[data-size]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-size') === self.size)); });
     el.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === self.mode)); });
     el.querySelector('.sam-sym').textContent = this.sym ? '$' : 'τ';
+    el.querySelector('.sam-tgt').setAttribute('aria-pressed', String(!!this.target));
+    el.querySelector('[data-chip="tmax"]').hidden = !!this.target;
+    el.querySelector('[data-chip="tmin"] .sam-nm').innerHTML = this.target ? 'T <span class="sam-mean">target balance</span>'
+      : 'T<sub>min</sub> <span class="sam-mean">lower threshold</span>';
     el.querySelectorAll('[data-v]').forEach(function (n) { n.textContent = money(s[n.getAttribute('data-v')], true); });
     if (this.shown === 'XS') return;
     this.drawn = true;
@@ -653,7 +694,7 @@
         '<button type="button" class="sam-fmt" title="' + (this.openForm ? 'Show the thresholds with their nominals' : 'Show the interval where nothing is swept') +
         '">' + (this.openForm ? '[ ]' : '( )') + '</button></div>' +
       '<div class="sam-line"><span class="sam-lab">sweep status:</span><span class="sam-badge" style="background:' + z.fill + '26;color:' + z.ink + '">' +
-        z.title + (z.terminal ? ' ⏚' : '') + '</span>' +
+        titleMarkup(r.zone, 700, 'b') + '</span>' +
         '<span class="sam-mono sam-probe">' + money(s.p, true) + '</span><span>→</span>' +
         '<span class="sam-mono sam-probe">' + (r.y === null ? '∄ (terminal failure)' : money(r.y, true)) + '</span>' +
         (dir ? '<span class="sam-dir">' + dir + '</span>' : '') + '</div>';
@@ -664,9 +705,9 @@
     var fx = el.querySelector('.sam-fx'), eq = s.tmin === s.tmax, max = sweptAmountMathProfiles[this.shown].fx;
     fx.style.fontSize = '10px';
     if (typeof katex !== 'undefined') {
-      try { katex.render(formulaTex(r.zone, eq, s.imax === 0), fx, { displayMode: true, throwOnError: false }); } catch (e) { fx.innerHTML = formulaHtml(r.zone, eq, s.imax === 0); }
+      try { katex.render(formulaTex(s, r.zone, r.y), fx, { displayMode: true, throwOnError: false, strict: false }); } catch (e) { fx.innerHTML = formulaHtml(s, r.zone, r.y); }
     } else {
-      fx.innerHTML = formulaHtml(r.zone, eq, s.imax === 0);
+      fx.innerHTML = formulaHtml(s, r.zone, r.y);
     }
     var body = fx.querySelector('.katex') || fx.querySelector('.sam-fx-plain'), w = body ? body.getBoundingClientRect().width : 0;
     if (w > 0) fx.style.fontSize = Math.max(7.5, Math.min(max, 10 * fx.clientWidth * 0.98 / w)).toFixed(2) + 'px';

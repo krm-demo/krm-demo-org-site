@@ -68,3 +68,8 @@
 .article-layout.sam-page { grid-template-columns: minmax(0, 820px); }
 .sam-page article > p, .sam-page article > ul { max-width: var(--measure); }
 .sam-page .lead { font-family: var(--sam-serif, Georgia, serif); font-style: italic; color: var(--ink-soft); margin-top: -0.5rem; }
+
+/* The statuses under the widget: the same list as under the picture in the README of plans-math. */
+.sam-statuses { padding-left: 1.2rem; font-size: 0.95rem; }
+.sam-statuses li { margin: 0.25rem 0; }
+.sam-fx-plain td.sam-fx-st { font-family: var(--font-body); font-style: normal; font-size: 0.8em; padding-left: 1em; }

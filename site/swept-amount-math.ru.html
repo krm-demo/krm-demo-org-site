@@ -44,24 +44,30 @@
         <p>Один мой баланс живёт от зарплаты до зарплаты. Он вздыхает, когда худеет, и не находит себе места, когда толстеет.
             Другой тихо сидит на инвестиционном счёте и растёт. Когда-то они договорились о нескольких правилах, и с тех пор
             деньги ходят между ними сами, без звонков по мелочам.</p>
-        <p>Коротко: <b>cash sweep</b> держит баланс текущего счёта, <b>DDA</b> (demand deposit account),
-            между <i>T</i><sub>min</sub> и <i>T</i><sub>max</sub>. Ниже — деньги возвращаются с инвестиционного счёта (Swept in);
-            выше — излишек уходит туда (Swept out). Перевод меньше номинала <i>τ</i> делать не стоит.
-            Один перевод внутрь не вернёт больше, чем <i>A</i> — баланс инвестиционного счёта; один перевод наружу не отправит больше, чем <i>L</i>.
-            Когда не помогает ни то, ни другое (Swept in zero, Overflow), переводимой суммы не существует: terminal failure ⏚.</p>
-        <p>Подписи на графике — по-английски, как в основной версии.</p>
+        <p>Коротко: <b>cash sweep</b> держит баланс текущего счёта, <b>DDA</b> (demand deposit account), между
+            <i>T</i><sub>min</sub> и <i>T</i><sub>max</sub> (или на одном целевом <i>T</i>), переводя деньги In с инвестиционного
+            счёта и Out на него. Двигайте ручки; <b>T</b> переключает на один целевой баланс, <b>$</b> — на суммы.
+            Подписи на графике — по-английски, как в основной версии.</p>
 
         <div data-swept-amount-math data-xs="projects/swept-amount-math/swept-amount-math.svg">
             <noscript><img src="projects/swept-amount-math/swept-amount-math.svg" alt="Balances Equilibrium: swept amount per current balance" style="max-width:100%"></noscript>
         </div>
 
-        <p>Над графиком: <b>Threshold</b> в виде −<i>τ</i><sub>min</sub> [<i>T</i><sub>min</sub> ; <i>T</i><sub>max</sub>] +<i>τ</i><sub>max</sub>
-            и <b>Sweep Status</b> баланса под фиолетовой пробой — сумма и куда она идёт.</p>
-        <p>Вся история — на GitHub, в <a href="https://github.com/krm-demo/ai-plans-instr/blob/main/plans-math/README.md" target="_blank" rel="noopener">README модуля plans-math</a> (по-английски):
-            каждый Sweep Status, каждая зона и её цвет, почему график прыгает на номиналах, почему все наклоны — 45° даже на разорванных осях,
-            и тот же график совсем без JavaScript: его рисует Java с конечным набором кадров под мышью, а отдаёт
-            <a href="https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/" target="_blank" rel="noopener">AWS Lambda</a> (откройте и поводите мышью над графиком).</p>
-        <p><b>Auto</b> выбирает размер виджета по ширине страницы; <code>?size=L</code>, <code>M</code>, <code>S</code>
+        <ul class="sam-statuses">
+            <li>Swept <b>In</b> Zero — нужен перевод In, но инвестиционный счёт пуст (<i>A</i> = 0): terminal failure ⏚. Как жёлтая карточка: на следующем раунде план отменяется или ставится на паузу.</li>
+            <li>Swept <b>In</b> Partial — далеко ниже <i>T</i><sub>min</sub>: возвращается всё <i>A</i>, а баланса всё равно не хватает; инвестиционный счёт опустошается.</li>
+            <li>Swept <b>In</b> Full — с инвестиционного счёта возвращается ровно недостающее <i>T</i><sub>min</sub> − <i>x</i>, не меньше <i>τ</i><sub>min</sub> (в точке <i>T</i><sub>min</sub> − <i>A</i> это всё <i>A</i>: счёт выбран до цента).</li>
+            <li><b>In</b> Nominal Min — ниже <i>T</i><sub>min</sub> меньше чем на <i>τ</i><sub>min</sub>: переводить не стоит.</li>
+            <li><b>In</b> Range — между <i>T</i><sub>min</sub> и <i>T</i><sub>max</sub> (или ровно на целевом <i>T</i>): переводить нечего.</li>
+            <li><b>In</b> Nominal Max — выше <i>T</i><sub>max</sub> меньше чем на <i>τ</i><sub>max</sub>: переводить не стоит.</li>
+            <li>Swept <b>Out</b> — излишек <i>x</i> − <i>T</i><sub>max</sub>, не меньше <i>τ</i><sub>max</sub>, уходит с DDA на инвестиционный счёт; ровно <i>L</i> ещё разрешено.</li>
+            <li>Swept <b>Out</b> Overflow — излишек больше <i>L</i>, самого крупного разового платежа, который принимает инвестиционный счёт: terminal failure ⏚.</li>
+        </ul>
+
+        <p>Эта страница — интерактивная версия на JavaScript. Те же картинки совсем без JavaScript рисует Java-библиотека
+            <a href="https://github.com/krm-demo/ai-plans-instr/blob/main/plans-math/README.md" target="_blank" rel="noopener">plans-math</a>: в её README — параметры и как всё нарисовано,
+            а в <a href="https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html" target="_blank" rel="noopener">отчёте тестов</a> — все варианты картинки.
+            <b>Auto</b> выбирает размер виджета по ширине страницы; <code>?size=L</code>, <code>M</code>, <code>S</code>
             или <code>XS</code> в адресе фиксирует его. <a href="https://github.com/krm-demo/krm-demo-org-site/tree/main/site/projects/swept-amount-math" target="_blank" rel="noopener">Исходник виджета</a>.</p>
     </article>
 </main>
