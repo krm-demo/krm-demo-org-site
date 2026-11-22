@@ -252,6 +252,80 @@ def home_glyphs():
     print("fft glyph bars:", " ".join(f"M{9 + 7 * i} 62V{62 - h}" for i, h in enumerate(heights)))
 
 
+def sampling_humps():
+    """Seven samples of a band-limited signal, one sin(x)/x hump per sample, and their sum through every sample."""
+    def sig(t):
+        return 0.6 * np.sin(2 * np.pi * 0.13 * t + 0.4) + 0.35 * np.cos(2 * np.pi * 0.31 * t)
+    n = np.arange(-3, 4)
+    t = np.linspace(-4.5, 4.5, 901)
+    p = Plot(50, 15, 550, 290, (-4.5, 4.5), (-1.0, 1.0))
+    parts = p.frame([-4, -3, -2, -1, 0, 1, 2, 3, 4], [-1, -0.5, 0, 0.5, 1], "t/Δ", xfmt=lambda v: str(int(v)))
+    for k in n:
+        parts += p.line(t, sig(k) * np.sinc(t - k), A, 1, "4 3")
+    total = sum(sig(k) * np.sinc(t - k) for k in n)
+    parts += p.line(t, total, INK, 2.2) + p.dots(n, sig(n), B, 4)
+    save("sampling-humps.svg", 640, 340, parts)
+
+
+def sampling_lattices():
+    """Copies of a round spectrum in two equal squares: on a square lattice (left) and packed hexagonally (right)."""
+    r, w, h, box = 24, 640, 300, 260
+    parts = []
+    for k, (ox, hexa) in enumerate(((30, False), (350, True))):
+        parts.append(f'<clipPath id="lat{k}"><rect x="{ox}" y="20" width="{box}" height="{box}"/></clipPath>')
+        cells = []
+        for i in range(-6, 9):
+            for j in range(-2, 9):
+                x = ox + r + (i + (0.5 * j if hexa else 0)) * 2 * r
+                y = 20 + r + j * (np.sqrt(3) if hexa else 2) * r
+                if ox - r <= x <= ox + box + r and 20 - r <= y <= 20 + box + r:
+                    cells.append((x, y))
+        g = [f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" style="fill:{A};fill-opacity:.12;stroke:{A};stroke-width:1.4"/>'
+             + dot(x, y, INK, 2.2) for x, y in cells]
+        parts.append(f'<g clip-path="url(#lat{k})">' + "".join(g) + "</g>")
+        parts.append(f'<rect x="{ox}" y="20" width="{box}" height="{box}" style="fill:none;stroke:{INK};stroke-width:1.2"/>')
+    save("sampling-lattices.svg", w, h, parts)
+
+
+def sampling_sphere():
+    """A globe with L = 8 Gauss-Legendre latitudes and 2L - 1 = 15 meridians: the 120 sampling points."""
+    L, cx, cy, R, w, h = 8, 320, 170, 150, 640, 340
+    tilt = np.radians(20)
+
+    def proj(theta, phi):
+        x, y, z = np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)
+        y2, z2 = y * np.cos(tilt) - z * np.sin(tilt), y * np.sin(tilt) + z * np.cos(tilt)
+        return cx + R * x, cy - R * z2, y2           # y2 < 0: the front half
+
+    def curve(pts):
+        out, run = [], []
+        for x, y, d in pts:
+            if d <= 0:
+                run.append(f"{x:.1f},{y:.1f}")
+            elif run:
+                out.append(run)
+                run = []
+        if run:
+            out.append(run)
+        return [f'<polyline points="{" ".join(r)}" style="fill:none;stroke:{GRID};stroke-width:1.2"/>' for r in out if len(r) > 1]
+
+    parts = [f'<circle cx="{cx}" cy="{cy}" r="{R}" style="fill:none;stroke:{INK};stroke-width:1.5"/>']
+    z, _ = np.polynomial.legendre.leggauss(L)
+    thetas = np.arccos(z)
+    phis = 2 * np.pi * np.arange(2 * L - 1) / (2 * L - 1)
+    ring = np.linspace(0, 2 * np.pi, 241)
+    for th in thetas:
+        parts += curve([proj(th, ph) for ph in ring])
+    for ph in phis:
+        parts += curve([proj(th, ph) for th in np.linspace(0, np.pi, 121)])
+    for th in thetas:
+        for ph in phis:
+            x, y, d = proj(th, ph)
+            if d <= 0:
+                parts.append(dot(x, y, A, 3.4))
+    save("sampling-sphere.svg", w, h, parts)
+
+
 if __name__ == "__main__":
     chebyshev_nodes()
     gibbs()
@@ -262,3 +336,6 @@ if __name__ == "__main__":
     fft_bell_16()
     fft_dice()
     home_glyphs()
+    sampling_humps()
+    sampling_lattices()
+    sampling_sphere()
