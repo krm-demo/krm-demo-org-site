@@ -2,7 +2,7 @@
 
 *Samples on a line, a ring, a plane and a sphere: when a handful of numbers is enough to know a whole curve, picture or planet, and how few they can be. The third note in a series that began with [Chebyshev polynomials](chebyshev.en.md) and went on with [the FFT](fft.en.md). Statements come with proofs; click "Proof" to expand them. Every listing was run (Python with [NumPy](https://numpy.org/){: .tech} and [SciPy](https://scipy.org/){: .tech}), and the output shown under it is what it printed.*
 
-**The short version.** If a signal contains no frequency of $f_s/2$ or above, its samples, taken $f_s$ times a second, determine it completely: between the samples it is a sum of $\sin x / x$ humps, one per sample. On a ring the hump becomes periodic, and the FFT computes it. On a plane the samples can sit on a square grid, but a hexagonal one needs 13.4% fewer of them; the bees knew. On a sphere there is no even grid at all. The best practical grids need about twice as many points as there are numbers to recover, and their latitudes are, once again, Gauss's.
+**The short version.** If a signal contains no frequency of $f_s/2$ or above, its samples, taken $f_s$ times a second, determine it completely: between the samples it is a sum of $\sin x / x$ humps, one per sample. On a ring the hump becomes periodic, and the FFT computes it. On a plane the samples can sit on a square grid, but a hexagonal one needs 13.4% fewer of them; the bees knew. On a sphere there is no even grid at all. The best practical grids need about twice as many points as there are numbers to recover, and their latitudes are, once again, Gauss's. Points thrown at random do almost as well, if thrown with the right density.
 
 ## 0. Why it matters: from a CD to the weather forecast
 
@@ -161,7 +161,66 @@ print(np.max(np.abs(rebuilt - f(t, p))))
 
 Why about twice $L^2$, and not $L^2$? Every latitude gets the same number of points, the short circles near the poles as many as the equator, and they crowd. With equally spaced latitudes it is worse: $2L \times 2L = 4L^2$ points. In principle almost any $L^2$ points in general position would do, but then reading the coefficients back becomes a badly conditioned computation, and no fast transform goes with it. Weather models take the middle road: a *reduced* Gaussian grid, with fewer points on the latitudes near the poles.
 
-## 5. History: Whittaker, Nyquist, Kotelnikov, Shannon, the bees and Gauss again
+### 4.1 Thrown at random
+
+What if the points are not placed at all, but thrown? That is the Monte Carlo way, and for integrals it is famous: the error falls as $1/\sqrt N$, whatever the dimension. Slowly, but just as slowly on a line as in a space of a thousand dimensions, where any grid would have drowned long ago.
+
+Recovering a whole function is a harder task than one integral, and random points pay for it with a small surcharge: about $K\ln K$ points for $K$ unknowns instead of $K$. The *condition number* below says how many times the errors in the data can grow on the way back; 1 is ideal.
+
+```python
+import numpy as np
+from scipy.special import sph_harm_y
+
+rng = np.random.default_rng(3)
+L = 16
+lm = [(l, m) for l in range(L) for m in range(-l, l + 1)]
+K = len(lm)                                     # 256 numbers to recover
+
+def cond(n):                        # n random points, uniform on the sphere
+    t, p = np.arccos(rng.uniform(-1, 1, n)), rng.uniform(0, 2 * np.pi, n)
+    A = np.array([sph_harm_y(l, m, t, p) for l, m in lm]).T
+    return np.linalg.cond(A)        # how much data errors can grow
+
+for n in (K, 2 * K, round(K * np.log(K)), 4 * round(K * np.log(K))):
+    print(n, round(float(np.median([cond(n) for _ in range(5)])), 1))
+# 256 41667.7
+# 512 21.1
+# 1420 3.7
+# 5680 1.7
+```
+
+With exactly $K$ random points the recovery is useless; with $K\ln K$ it is as good as the Gauss grid. And on the sphere uniform random points are fair: the sum $\sum_m \lvert Y_\ell^m\rvert^2$ is the same at every point of the sphere (the addition theorem), so no point matters more than another, and turning the globe changes nothing.
+
+![The same globe with 120 points thrown at random](figures/sampling-random.svg)
+
+*Figure 4.* 120 points thrown uniformly at random. No crowding at the poles, as in Figure 3, but gaps and clusters: that is what the logarithm pays for.
+
+Does this contradict the Chebyshev nodes, chosen so carefully in [the first note](chebyshev.en.md)? No: it explains them. On an interval polynomials swing hardest near the ends, and uniform random points are poor there. Random points with the Chebyshev density, $x = \cos\theta$ with $\theta$ uniform, are good:
+
+```python
+import numpy as np
+from numpy.polynomial import legendre
+
+rng = np.random.default_rng(3)
+D = 40                                          # polynomials of degree < 40
+
+def cond(x):
+    V = legendre.legvander(x, D - 1) * np.sqrt(2 * np.arange(D) + 1)
+    return np.linalg.cond(V)
+
+for n in (2 * D, 8 * D):
+    uniform = np.median([cond(rng.uniform(-1, 1, n)) for _ in range(5)])
+    chebyshev = np.median([cond(np.cos(np.pi * rng.uniform(0, 1, n))) for _ in range(5)])
+    print(n, f"{uniform:.3g}", f"{chebyshev:.3g}")
+# 80 8.71e+05 544
+# 320 18.9 10.2
+```
+
+The columns: points, then the condition number for uniform and for Chebyshev-random points, for polynomials of degree below 40. The Chebyshev nodes are that same density without the dice. Chance works when it is thrown with the right density, and on the sphere the right density is the uniform one.
+
+Where chance really wins is elsewhere: in high dimensions, where a grid of $n$ points per axis needs $n^d$ of them; for *sparse* signals with few frequencies, which random samples can catch with far fewer points than Kotelnikov asks for (compressed sensing, 2006); and in real data, whose weather stations and satellites nobody placed on Gauss's latitudes.
+
+## 5. History: Whittaker, Nyquist, Kotelnikov, Shannon, the bees, Gauss again and the dice
 
 **Whittaker, 1915.** Edmund Whittaker (1873–1956), a mathematician in Edinburgh, was looking for the smoothest curve through equally spaced values, and found the "cardinal function": the sum of the humps of [§1](#s1).
 
@@ -175,6 +234,8 @@ Why about twice $L^2$, and not $L^2$? Every latitude gets the same number of poi
 
 **Gauss, 1814, and the sphere, 1994.** Carl Friedrich Gauss (1777–1855) found that the zeros of a polynomial of degree $L$ integrate exactly every polynomial up to degree $2L - 1$, twice as many as equally spaced points manage. That is why his latitudes do it with the fewest points in [§4](#s4). James Driscoll and Dennis Healy proved the sampling theorem on the sphere for equally spaced latitudes in 1994, and in 2011 Jason McEwen and Yves Wiaux brought equally spaced latitudes down to about $2L^2$ points as well.
 
+**Monte Carlo and the dice, 1949–2013.** Nicholas Metropolis and Stanislaw Ulam named the Monte Carlo method in 1949, after the casino. Its descendants reached sampling in this century: in 2006 Emmanuel Candès, Justin Romberg, Terence Tao and David Donoho showed that random samples recover sparse signals far below the Kotelnikov rate, and in 2013 Albert Cohen, Mark Davenport and Dany Leviatan showed when $K\ln K$ random points recover $K$ unknowns stably, the surcharge of [§4.1](#s4-1).
+
 ## References
 
 - E. T. Whittaker, *On the functions which are represented by the expansions of the interpolation-theory*, Proceedings of the Royal Society of Edinburgh 35 (1915), 181–194.
@@ -184,3 +245,6 @@ Why about twice $L^2$, and not $L^2$? Every latitude gets the same number of poi
 - D. P. Petersen, D. Middleton, *Sampling and reconstruction of wave-number-limited functions in N-dimensional Euclidean spaces*, Information and Control 5 (1962), 279–323.
 - J. R. Driscoll, D. M. Healy, *Computing Fourier transforms and convolutions on the 2-sphere*, Advances in Applied Mathematics 15 (1994), 202–250.
 - J. D. McEwen, Y. Wiaux, *A novel sampling theorem on the sphere*, IEEE Transactions on Signal Processing 59 (2011), 5876–5887.
+- N. Metropolis, S. Ulam, *The Monte Carlo method*, Journal of the American Statistical Association 44 (1949), 335–341.
+- E. J. Candès, J. Romberg, T. Tao, *Robust uncertainty principles: exact signal reconstruction from highly incomplete frequency information*, IEEE Transactions on Information Theory 52 (2006), 489–509.
+- A. Cohen, M. A. Davenport, D. Leviatan, *On the stability and accuracy of least squares approximations*, Foundations of Computational Mathematics 13 (2013), 819–834.

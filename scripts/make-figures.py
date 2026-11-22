@@ -326,6 +326,21 @@ def sampling_sphere():
     save("sampling-sphere.svg", w, h, parts)
 
 
+def sampling_random():
+    """The same globe with 120 points thrown uniformly at random: no crowding at the poles, but gaps and clusters."""
+    cx, cy, R, w, h = 320, 170, 150, 640, 340
+    tilt = np.radians(20)
+    rng = np.random.default_rng(5)
+    theta, phi = np.arccos(rng.uniform(-1, 1, 120)), rng.uniform(0, 2 * np.pi, 120)
+    parts = [f'<circle cx="{cx}" cy="{cy}" r="{R}" style="fill:none;stroke:{INK};stroke-width:1.5"/>']
+    for th, ph in zip(theta, phi):
+        x, y, z = np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)
+        y2, z2 = y * np.cos(tilt) - z * np.sin(tilt), y * np.sin(tilt) + z * np.cos(tilt)
+        if y2 <= 0:
+            parts.append(dot(cx + R * x, cy - R * z2, B, 3.4))
+    save("sampling-random.svg", w, h, parts)
+
+
 if __name__ == "__main__":
     chebyshev_nodes()
     gibbs()
@@ -339,3 +354,4 @@ if __name__ == "__main__":
     sampling_humps()
     sampling_lattices()
     sampling_sphere()
+    sampling_random()
