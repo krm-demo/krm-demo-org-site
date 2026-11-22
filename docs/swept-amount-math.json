@@ -20,15 +20,15 @@
     }
   },
   "summary": {
-    "en": "The swept amount of a cash sweep per current balance, as an interactive graph: thresholds, nominals, what the investment account has and accepts. Drag the handles and watch the sweep status change. With a Java library that draws the same graph as one SVG, from an icon to the full picture.",
-    "ru": "Сумма перевода при cash sweep в зависимости от текущего баланса, интерактивным графиком: пороги, номиналы, сколько есть на инвестиционном счёте и сколько он принимает. Двигайте ручки и смотрите, как меняется статус. Плюс Java-библиотека, которая рисует тот же график одним SVG — от иконки до полной картинки."
+    "en": "Cash sweep math: the swept amount per current balance.",
+    "ru": "Математика cash sweep: сумма перевода по текущему балансу."
   },
   "icon": {
     "large": "icons/swept-amount-math.svg",
     "small": "icons/swept-amount-math-small.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-21T13:30:00-05:00",
+  "updatedAt": "2026-11-21T23:00:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,
