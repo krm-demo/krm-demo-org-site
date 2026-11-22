@@ -76,6 +76,18 @@ print([(float(freq[i]), round(float(amp[i]), 2)) for i in top])
 
 *Figure 1.* Top: the first quarter second of the signal. The noise is as strong as the louder tone, and neither tone can be seen. Bottom: the amplitudes $2\lvert X_k\rvert/N$ up to 250 Hz. The two tones stand at 1.09 and 0.53; nothing else exceeds 0.18. Noise is spread thinly over all 500 frequencies, while each tone sits in one.
 
+### 1.2 Between the samples: $\sin x / x$
+
+The samples say nothing about what the signal did between them, unless we know one more thing: that it contains no frequency of $f_s/2$ or above. Then the samples determine it completely, at every instant:
+
+$$
+x(t) = \sum_{n=-\infty}^{\infty} x(n\Delta)\,\operatorname{sinc}\!\left(\frac{t - n\Delta}{\Delta}\right), \qquad \operatorname{sinc}(u) = \frac{\sin \pi u}{\pi u}.
+$$
+
+Each sample contributes one $\sin x / x$ hump, centred on its own node. The hump is 1 at its node and 0 at every other node, so the sum passes exactly through all the samples, and no other curve without high frequencies does. The result is not periodic: it is the one smooth signal that the samples allow. This is the sampling theorem of Whittaker, Kotelnikov and Shannon ([§7](#s7)).
+
+For $N$ samples of a periodic signal, with $N$ odd, the same idea works with the periodic hump $\dfrac{\sin \pi u}{N \sin(\pi u / N)}$ ($u$ in samples). And that is exactly what the FFT gives when the spectrum is padded with zeros and transformed back: checked for $N = 9$, the two agree to $10^{-15}$.
+
 ## 2. The FFT: halve, transform, combine
 
 > **Theorem.** Let $N$ be even. Let $E$ be the DFT, of length $N/2$, of the even-numbered samples $x_0, x_2, \dots$ and $O$ that of the odd-numbered samples $x_1, x_3, \dots$. Then for $0 \le k < N/2$
@@ -571,6 +583,8 @@ The DFT has one more fixed object, this time a statistical one. If the $N$ sampl
 
 **The bell, 1733–1810.** Abraham de Moivre found the bell first, in 1733, as an approximation to the number of heads in many tosses of a coin. In 1801 Gauss became famous when, from a handful of observations, he computed the orbit of Ceres, which astronomers had lost, and said where to look for it; it turned up almost exactly there. In his 1809 book on the motion of celestial bodies he derived the bell as the law of observational errors and used it to justify the method of least squares. Ever since, the distribution has been called Gaussian, and later the bell was printed, next to Gauss's portrait, on the German 10-mark banknote. In 1810 Laplace proved the first central limit theorem, and he proved it through the spectra of distributions, the characteristic functions of [§6.3](#s6-3). The same trick rescued Fourier with heat in those very years: in harmonics, the complicated becomes simple.
 
+**Whittaker, Kotelnikov, Shannon, 1915–1949.** In 1915 the Edinburgh mathematician Edmund Whittaker found the "cardinal function", the sum of $\sin x / x$ humps of [§1.2](#s1-2), as the smoothest curve through equally spaced values. In 1933 Vladimir Kotelnikov, a young Soviet engineer, proved that a signal without frequencies above $B$ is carried completely by $2B$ samples per second, and drew the conclusion for telegraph and radio; in Russia the theorem bears his name. In 1949 Claude Shannon, the father of information theory, published the same theorem in English, and the West named it after him (and after Harry Nyquist, who had counted the $2B$ in 1928). One more namesake: by one account the name of Claude, the AI that helped write these notes, is a nod to Shannon.
+
 **Cooley and Tukey, 1965.** In 1963 the statistician John Tukey and the physicist Richard Garwin sat in a meeting of President Kennedy's Science Advisory Committee. The United States wanted a nuclear test ban that could be checked without inspectors on Soviet soil, by seismometers placed around the country. That meant Fourier analysis of long seismic records, too slow for the computers of the day. Tukey had an idea for speeding it up. Garwin saw its worth and took the notes to IBM, where James Cooley was asked to program it. Cooley was told it was for a crystal of helium-3, which was also true: Garwin wanted it for that as well. The program ran in 1964 on an IBM 7094, and the five-page paper appeared in April 1965. Only afterwards did historians trace the idea back, step by step, to Gauss.
 
 **Ahmed, 1972.** Nasir Ahmed, at Kansas State University, asked the US National Science Foundation for money to study a cosine transform for compressing images. The proposal was turned down; one reviewer found the idea too simple. He did the work anyway with his student T. Natarajan and his friend K. R. Rao, and the paper appeared in January 1974. His starting point, he wrote later, was Chebyshev interpolation: the nodes of the [previous note](chebyshev.en.md#s1-4). JPEG (1992) put the result into every camera.
@@ -582,5 +596,6 @@ The DFT has one more fixed object, this time a statistical one. If the $N$ sampl
 - N. Ahmed, T. Natarajan, K. R. Rao, *Discrete cosine transform*, IEEE Transactions on Computers C-23 (1974), 90–93; and N. Ahmed, *How I came up with the discrete cosine transform*, Digital Signal Processing 1 (1991), 4–5.
 - M. Frigo, S. G. Johnson, *The design and implementation of FFTW3*, Proceedings of the IEEE 93 (2005), 216–231.
 - H. Fischer, *A History of the Central Limit Theorem: From Classical to Modern Probability Theory*, Springer, 2011.
+- C. E. Shannon, *Communication in the presence of noise*, Proceedings of the IRE 37 (1949), 10–21; V. A. Kotelnikov, *On the transmission capacity of "ether" and wire in electrocommunications*, 1933 (English translation in Physics–Uspekhi 49 (2006), 736–744).
 - J. Fourier, *Théorie analytique de la chaleur*, Paris, 1822.
 - IEEE Milestone, [First demonstration of the fast Fourier transform (FFT), 1964](https://ethw.org/Milestones:First_Demonstration_of_the_Fast_Fourier_Transform_(FFT),_1964), Engineering and Technology History Wiki.
