@@ -1,34 +1,33 @@
 {
   "id": "swept-amount-math",
-  "kind": "project",
+  "kind": "article",
   "category": "projects",
-  "link": "https://krm-demo.github.io/ai-plans-instr/plans-math/",
-  "linkLabel": "GitHub Pages",
   "languages": [
-    "en"
+    "en",
+    "ru"
   ],
   "title": {
     "en": {
-      "full": "Balances Equilibrium",
-      "medium": "Balances Equilibrium",
-      "short": "Equilibrium"
+      "full": "My balances sing romances",
+      "medium": "Balances sing romances",
+      "short": "Romances"
     },
     "ru": {
-      "full": "Равновесие балансов",
-      "medium": "Равновесие балансов",
-      "short": "Равновесие"
+      "full": "Мои балансы поют романсы",
+      "medium": "Балансы поют романсы",
+      "short": "Романсы"
     }
   },
   "summary": {
-    "en": "Cash sweep math: the swept amount per current balance.",
-    "ru": "Математика cash sweep: сумма перевода по текущему балансу."
+    "en": "Cash sweep math as a demo page, and a Java library that draws it as one SVG: an icon on a phone, the full graph on a laptop. Tested by pictures you scroll through, with links to the lines that do it.",
+    "ru": "Математика cash sweep: демо-страница и Java-библиотека, которая рисует её одним SVG — иконкой на телефоне и полным графиком на ноутбуке. Проверено картинками, которые просто листаешь, со ссылками на те самые строки кода."
   },
   "icon": {
     "large": "icons/swept-amount-math.svg",
     "small": "icons/swept-amount-math-small.svg"
   },
   "createdAt": "2026-11-20T15:30:00-05:00",
-  "updatedAt": "2026-11-21T23:00:00-05:00",
+  "updatedAt": "2026-11-21T23:50:00-05:00",
   "stats": {
     "lastSeenAt": null,
     "visitors": null,
