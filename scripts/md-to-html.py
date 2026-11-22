@@ -80,11 +80,10 @@ TEMPLATE = """<!DOCTYPE html>
 
 <main class="wrap article-layout{layout_class}">
     <article>
-        <p class="article-nav">
-            <a href="./">&larr; {home}</a> · <a href="{repo}/blob/main/{source}" target="_blank" rel="noopener">{source_label}</a>
+        <nav class="article-nav">
+            <a href="./">&larr; {home}</a>
             {switcher}
-            <span id="visit-badge"></span>
-        </p>
+        </nav>
 {dates}{body}
     </article>
 {toc}</main>
@@ -174,19 +173,27 @@ def toc_list(tokens):
     return f"<ol>{items}</ol>"
 
 
-def dates_line(name, lang):
-    """Small line under the navigation: when the article reached the preview and krm-demo.org (scripts/publish_dates.py)."""
+def dates_line(name, lang, source_href, source_label):
+    """The quiet line under the navigation: when the article reached krm-demo.org (the exact times and the preview in
+    the tooltip), the release, the Markdown source and the visit badge. Each item stays whole; the line wraps between
+    them (scripts/publish_dates.py)."""
     d = publish_dates.dates(name)
-    if not d["preview"]:
-        return ""
     ru = lang == "ru"
-    stamp = lambda m: f'<time datetime="{m.isoformat()}">{publish_dates.day_time(m, lang)}</time>'
-    parts = [f'{"Превью" if ru else "Preview"}: {stamp(d["preview"])}']
-    if d["release"]:
-        parts.append(f'{"на krm-demo.org" if ru else "krm-demo.org"}: {stamp(d["release"])} ({d["tag"]})')
-    else:
-        parts.append("на krm-demo.org: ещё нет" if ru else "krm-demo.org: not yet")
-    return f'        <p class="article-dates">{" · ".join(parts)}</p>\n'
+    item = lambda inner, cls="": f'<span class="meta-item{" " + cls if cls else ""}">{inner}</span>'
+    items = []
+    if d["preview"]:
+        preview = f'{"Превью" if ru else "Preview"}: {publish_dates.day_time(d["preview"], lang)}'
+        if d["release"]:
+            tip = f'krm-demo.org: {publish_dates.day_time(d["release"], lang)} · {preview}'
+            items.append(item(f'<time datetime="{d["release"].isoformat()}" title="{tip}">{publish_dates.day(d["release"], lang)}</time>'))
+            items.append(item(d["tag"], "meta-tag"))
+        else:
+            items.append(item(f'<time datetime="{d["preview"].isoformat()}" title="{preview}">'
+                              f'{"превью" if ru else "preview"} {publish_dates.day(d["preview"], lang)}</time>'))
+            items.append(item("на krm-demo.org ещё нет" if ru else "not on krm-demo.org yet"))
+    items.append(item(f'<a href="{source_href}" target="_blank" rel="noopener">{source_label}</a>'))
+    items.append('<span id="visit-badge" class="meta-item"></span>')
+    return f'        <p class="article-meta">{"".join(items)}</p>\n'
 
 
 def inline_figures(body, docs_dir):
@@ -269,7 +276,7 @@ def main(src, dst):
                 items.append(f'<a class="lang-badge" href="{name}.{code}.html" hreflang="{code}" lang="{code}" '
                              f'title="{full}">{label}</a>')
             alternates += f'    <link rel="alternate" hreflang="{code}" href="{name}.{code}.html">\n'
-        switcher = f'<span class="lang-switch">· {ui["versions"]} {"".join(items)}</span>'
+        switcher = f'<span class="lang-switch" title="{ui["versions"]}">{"".join(items)}</span>'
 
     toc_html = ""
     if toc:
@@ -284,7 +291,8 @@ def main(src, dst):
         lang=lang, title=html.escape(title), description=description, source=src.replace(os.sep, "/"),
         repo=REPO_URL, body=body, toc=toc_html, layout_class="" if toc else " no-toc",
         section=ui["section"], home=ui["home"], source_label=ui["source"],
-        switcher=switcher, alternates=alternates, math_head=math_head, dates=dates_line(name, lang))
+        switcher=switcher, alternates=alternates, math_head=math_head,
+        dates=dates_line(name, lang, f"{REPO_URL}/blob/main/{src.replace(os.sep, '/')}", "Markdown"))
     with open(dst, "w", encoding="utf-8") as f:
         f.write(page)
     how = "" if not formulas else (" (math: in the browser)" if in_browser else f" ({len(formulas)} formulas)")
